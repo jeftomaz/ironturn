@@ -1,4 +1,5 @@
 package ironturn.model;
+import ironturn.pattern.strategy.AttackStrategy;
 
 public class Hero extends Character{
 
@@ -10,7 +11,7 @@ public class Hero extends Character{
     }
 
     @Override
-    public int attack() {
-        return strategy.execute(this);
+    public int attack(Character target) {
+        return strategy.execute(this, target);
     }
 }

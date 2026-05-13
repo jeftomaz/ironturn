@@ -5,7 +5,7 @@ public class Enemy extends Character{
 
     private static final double ATTACK_VARIANCE = 0.2;
 
-    private Random random;
+    private final Random random;
 
     public Enemy(String name, int hp, int hpMax, int atk, int def) {
         super(name, hp, hpMax, atk, def);
@@ -13,7 +13,7 @@ public class Enemy extends Character{
     }
 
     @Override
-    public int attack() {
+    public int attack(Character target) {
         int min = (int)(getAtk() * (1 - ATTACK_VARIANCE));
         int max = (int)(getAtk() * (1 + ATTACK_VARIANCE));
         return random.nextInt(min, max + 1);

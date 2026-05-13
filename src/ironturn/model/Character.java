@@ -32,6 +32,6 @@ public abstract class Character {
         return hp > 0;
     }
 
-    public abstract int attack();
+    public abstract int attack(Character target);
 
 }
