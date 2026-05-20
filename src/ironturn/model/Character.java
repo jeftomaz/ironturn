@@ -28,6 +28,10 @@ public abstract class Character {
         hp = Math.max(0, hp - hitTaken);
     }
 
+    public void heal(int amount) {
+        hp = Math.min(maxHp, hp + amount);
+    }
+
     public boolean isAlive() {
         return hp > 0;
     }
