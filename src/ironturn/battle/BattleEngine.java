@@ -1,10 +1,14 @@
 package ironturn.battle;
 
+import ironturn.model.Character;
 import ironturn.model.Enemy;
 import ironturn.model.Hero;
 import ironturn.model.HeroClass;
 import ironturn.pattern.command.AttackCommand;
 import ironturn.pattern.command.CommandHistory;
+import ironturn.pattern.decorator.AmuletDecorator;
+import ironturn.pattern.decorator.ShieldDecorator;
+import ironturn.pattern.decorator.SwordDecorator;
 import ironturn.pattern.observer.BattleLogger;
 import ironturn.pattern.observer.BattleObserver;
 import ironturn.pattern.observer.StatusDisplay;
@@ -19,6 +23,7 @@ import java.util.Scanner;
 public class BattleEngine {
 
     private Hero hero;
+    private Character equipped;
     private List<Enemy> enemies;
     private Enemy currentEnemy;
     private CommandHistory history;
@@ -38,15 +43,24 @@ public class BattleEngine {
     }
 
     private Hero createHero(String name, int type) {
-        return switch (type) {
-            case 1 -> new Hero(name, 120, 120, 20, 15, new WarriorAttack(), HeroClass.WARRIOR);
-            case 2-> new Hero(name, 80, 80, 30, 5, new MageAttack(), HeroClass.MAGE);
+        Hero h;
+        switch (type) {
+            case 1 -> {
+                h = new Hero(name, 120, 120, 20, 15, new WarriorAttack(), HeroClass.WARRIOR);
+                equipped = new ShieldDecorator(new SwordDecorator(h));
+            }
+            case 2-> {
+                h = new Hero(name, 80, 80, 30, 5, new MageAttack(), HeroClass.MAGE);
+                equipped = new AmuletDecorator(h);
+            }
 
             default -> {
                 System.out.println("Escolha inválida! Guerreiro selecionado por padrão.");
-                yield new Hero(name, 120, 120, 20, 15, new WarriorAttack(), HeroClass.WARRIOR);
+                h = new Hero(name, 120, 120, 20, 15, new WarriorAttack(), HeroClass.WARRIOR);
+                equipped = new ShieldDecorator(new SwordDecorator(h));
             }
-        };
+        }
+        return h;
     }
 
     private Enemy createEnemy(String name, int baseHp, int baseAtk, int baseDef) {
@@ -116,7 +130,7 @@ public class BattleEngine {
 
         switch (choice) {
             case 1 -> {
-                AttackCommand cmd = new AttackCommand(hero, currentEnemy, observers);
+                AttackCommand cmd = new AttackCommand(equipped, currentEnemy, observers);
                 cmd.execute();
                 history.push(cmd);
             }
@@ -135,7 +149,7 @@ public class BattleEngine {
 
     private void enemyTurn() {
         System.out.println("\n--- TURNO DO INIMIGO ---");
-        AttackCommand cmd = new AttackCommand(currentEnemy, hero, observers);
+        AttackCommand cmd = new AttackCommand(currentEnemy, equipped, observers);
         cmd.execute();
         history.push(cmd);
     }
@@ -147,6 +161,7 @@ public class BattleEngine {
         System.out.println("\nEscolha sua classe:");
         System.out.println("[1] Guerreiro");
         System.out.println("[2] Mago");
+        System.out.println("> ");
         int choice = Integer.parseInt(scanner.nextLine());
 
         hero = createHero(name, choice);
