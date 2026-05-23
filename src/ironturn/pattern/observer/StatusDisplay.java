@@ -1,5 +1,6 @@
 package ironturn.pattern.observer;
 
+import ironturn.battle.UI;
 import ironturn.model.Character;
 
 public class StatusDisplay implements BattleObserver {
@@ -19,7 +20,13 @@ public class StatusDisplay implements BattleObserver {
 
     @Override
     public void onEvent(BattleEvent battleEvent) {
-        System.out.println(buildBar(battleEvent.getAttacker()));
-        System.out.println(buildBar(battleEvent.getTarget()));
+        System.out.println();
+        System.out.printf("  💥 %s ataca %s por %d de dano!%n",
+                battleEvent.getAttacker().getName(),
+                battleEvent.getTarget().getName(),
+                battleEvent.getHitTaken());
+        UI.separator();
+        System.out.println("  " + buildBar(battleEvent.getAttacker()));
+        System.out.println("  " + buildBar(battleEvent.getTarget()));
     }
 }
