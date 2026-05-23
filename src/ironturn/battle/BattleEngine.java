@@ -4,6 +4,7 @@ import ironturn.model.Character;
 import ironturn.model.Enemy;
 import ironturn.model.Hero;
 import ironturn.model.HeroClass;
+import ironturn.model.item.Item;
 import ironturn.pattern.command.AttackCommand;
 import ironturn.pattern.command.CommandHistory;
 import ironturn.pattern.decorator.AmuletDecorator;
@@ -99,23 +100,27 @@ public class BattleEngine {
         System.out.println(buildBar(hero));
         System.out.println(buildBar(currentEnemy));
         if (hero.getHeroClass() == HeroClass.MAGE) {
-            System.out.println("✦ Feitiços de reversão: " + hero.getUndosRemaining());
+            System.out.println("✦ Feitiços de reversão: " + hero.getContraAvailable());
         }
     }
 
     private void playerTurn() {
         boolean actionTaken = false;
 
+        System.out.println();
+        System.out.println("Faça seu movimento!");
+        UI.pause(2000);
+
         while (!actionTaken) {
             try {
-                UI.section("⚔  SEU TURNO  —  " + hero.getName() + " vs " + currentEnemy.getName());
+                UI.section(">> SEU TURNO :: " + hero.getName() + " vs " + currentEnemy.getName());
                 System.out.println();
                 System.out.println("  " + buildBar(hero));
                 System.out.println("  " + buildBar(currentEnemy));
                 System.out.println();
                 UI.separator();
                 System.out.println("  [1] Atacar");
-                if (hero.getHeroClass() == HeroClass.MAGE && hero.getUndosRemaining() > 0) {
+                if (hero.getHeroClass() == HeroClass.MAGE && hero.getContraAvailable() > 0) {
                     System.out.println("  [2] Desfazer ataque sofrido");
                     System.out.println("  [3] Desfazer turno completo");
                 }
@@ -133,22 +138,21 @@ public class BattleEngine {
                         actionTaken = true;
                     }
                     case 2 -> {
-                        if (hero.getHeroClass() == HeroClass.MAGE && hero.getUndosRemaining() > 0) {
-                            history.undo();
-                            hero.useUndo();
+                        if (hero.getHeroClass() == HeroClass.MAGE && hero.getContraAvailable() > 0) {
+                            AttackCommand cmd1 = new AttackCommand(equipped, currentEnemy, observers);
+                            cmd1.execute();
+                            history.push(cmd1);
+
+                            if (currentEnemy.isAlive()) {
+                                AttackCommand cmd2 = new AttackCommand(equipped, currentEnemy, observers);
+                                cmd2.execute();
+                                history.push(cmd2);
+                            }
+
+                            hero.useContra();
                             actionTaken = true;
                         } else {
-                            System.out.println("  Ação indisponível.");
-                        }
-                    }
-                    case 3 -> {
-                        if (hero.getHeroClass() == HeroClass.MAGE && hero.getUndosRemaining() > 0) {
-                            history.undo();
-                            history.undo();
-                            hero.useUndo();
-                            actionTaken = true;
-                        } else {
-                            System.out.println("  Ação indisponível.");
+                            System.out.println("  Acao indisponivel.");
                         }
                     }
                     case 4 -> showStatus();
@@ -163,7 +167,7 @@ public class BattleEngine {
 
     private void enemyTurn() {
         UI.pause(1000);
-        UI.section("👹  TURNO DO INIMIGO  —  " + currentEnemy.getName());
+        UI.sectionEnemy("<<  TURNO DO INIMIGO  —  " + currentEnemy.getName());
 
         System.out.println();
         System.out.println("…O inimigo está se preparando para atacar!");
@@ -183,11 +187,11 @@ public class BattleEngine {
 
         UI.section("ESCOLHA SUA CLASSE");
         System.out.println();
-        System.out.println("  [1] ⚔  Guerreiro  — HP 120 | ATK 20 | DEF 15");
+        System.out.println("  [1] [G] Guerreiro  -- HP 120 | ATK 20 | DEF 15");
         System.out.println("       Espada (+10 ATK) e Escudo (+8 DEF)");
         System.out.println("       Habilidade: crítico com 5% de chance");
         System.out.println();
-        System.out.println("  [2] 🔮 Mago       — HP 80  | ATK 30 | DEF 5");
+        System.out.println("  [2] [M] Mago       -- HP 80  | ATK 30 | DEF 5");
         System.out.println("       Amuleto (+5 ATK, +30 HP máx)");
         System.out.println("       Habilidade: reverter 1 turno por inimigo");
         System.out.println();
@@ -208,20 +212,50 @@ public class BattleEngine {
         UI.separator();
     }
 
+    private Item showDropMenu(List<Item> drops) {
+        UI.section(">> SAQUE");
+        System.out.println("O inimigo deixou cair alguns itens:\n");
+        System.out.println(" [1] " + drops.get(0).getName() + " -- " + drops.get(0).getDescription());
+        System.out.println(" [2] " + drops.get(1).getName() + " -- " + drops.get(1).getDescription());
+        System.out.println();
+        UI.separator();
+
+        int choice = -1;
+        while (choice != 1 && choice != 2) {
+            try {
+                System.out.println(" > ");
+                choice = Integer.parseInt(scanner.nextLine());
+                if (choice != 1 && choice != 2)
+                    System.out.println(" Escolha [1] ou [2].");
+            } catch (NumberFormatException e) {
+                System.out.println(" Digite um número válido");
+            }
+        }
+        return drops.get(choice -1);
+    }
+
     private void loop() {
         while (hero.isAlive() && !enemies.isEmpty()) {
             playerTurn();
 
             if (!currentEnemy.isAlive()) {
                 UI.blank();
-                System.out.println("  ✔ " + currentEnemy.getName() + " foi derrotado!");
-                enemies.remove(currentEnemy);
+                System.out.println("  [+] " + currentEnemy.getName() + " foi derrotado!");
 
+                List<Item> drops = DropTable.roll();
+                Item chosen = showDropMenu(drops);
+                chosen.apply(hero);
+                System.out.println();
+                System.out.println(" Você obteve: " + chosen.getName() + "!");
+                UI.separator();
+
+                enemies.remove(currentEnemy);
                 if (!enemies.isEmpty()) {
                     currentEnemy = enemies.get(0);
-                    hero.resetUndos();
+                    hero.resetContra();
                     UI.separator();
-                    System.out.println("  ⚠  Um novo inimigo surge das sombras: " + currentEnemy.getName() + "!");
+                    System.out.println("  [!] Um novo inimigo surge das sombras: " + currentEnemy.getName() + "!");
+                    UI.pause(3000);
                     UI.separator();
                 }
                 continue;

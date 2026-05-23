@@ -2,6 +2,7 @@ package ironturn.pattern.observer;
 
 import ironturn.battle.UI;
 import ironturn.model.Character;
+import ironturn.model.Hero;
 
 public class StatusDisplay implements BattleObserver {
 
@@ -19,14 +20,19 @@ public class StatusDisplay implements BattleObserver {
     }
 
     @Override
-    public void onEvent(BattleEvent battleEvent) {
+    public void onEvent(BattleEvent event) {
+        Character hero  = event.getAttacker() instanceof Hero
+                ? event.getAttacker() : event.getTarget();
+        Character enemy = event.getAttacker() instanceof Hero
+                ? event.getTarget()   : event.getAttacker();
+
         System.out.println();
-        System.out.printf("  💥 %s ataca %s por %d de dano!%n",
-                battleEvent.getAttacker().getName(),
-                battleEvent.getTarget().getName(),
-                battleEvent.getHitTaken());
+        System.out.printf("  ** %s ataca %s por %d de dano!%n",
+                event.getAttacker().getName(),
+                event.getTarget().getName(),
+                event.getHitTaken());
         UI.separator();
-        System.out.println("  " + buildBar(battleEvent.getAttacker()));
-        System.out.println("  " + buildBar(battleEvent.getTarget()));
+        System.out.println("  " + buildBar(hero));
+        System.out.println("  " + buildBar(enemy));
     }
 }

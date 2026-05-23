@@ -32,6 +32,12 @@ public abstract class Character {
         hp = Math.min(maxHp, hp + amount);
     }
 
+    public void addAtk(int amount) { this.atk += amount; }
+
+    public void addDef(int amount) { this.def += amount; }
+
+    public void addMaxHp(int amount) { this.maxHp += amount; }
+
     public boolean isAlive() {
         return hp > 0;
     }

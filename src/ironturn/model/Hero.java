@@ -16,9 +16,9 @@ public class Hero extends Character{
 
     public HeroClass getHeroClass() { return heroClass; }
 
-    public int getUndosRemaining() { return undosRemaining; }
-    public void useUndo() { if (undosRemaining > 0) undosRemaining-- ;}
-    public void resetUndos() { undosRemaining = 1;}
+    public int getContraAvailable() { return undosRemaining; }
+    public void useContra() { if (undosRemaining > 0) undosRemaining-- ;}
+    public void resetContra() { undosRemaining = 1; }
 
     @Override
     public int attack(Character target) {

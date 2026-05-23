@@ -9,7 +9,7 @@ public class UI {
         blank();
         System.out.println("  ╔" + SEP + "╗");
         System.out.println("  ║" + sp(WIDTH) + "║");
-        System.out.println("  ║" + pad("⚔  I R O N  T U R N  ⚔", WIDTH) + "║");
+        System.out.println("  ║" + pad("=[ I R O N   T U R N ]=", WIDTH) + "║");
         System.out.println("  ║" + sp(WIDTH) + "║");
         System.out.println("  ║" + pad("RPG por turnos · Java puro", WIDTH) + "║");
         System.out.println("  ║" + sp(WIDTH) + "║");
@@ -17,7 +17,7 @@ public class UI {
         blank();
     }
 
-    public static void  section(String title) {
+    public static void section(String title) {
         blank();
         System.out.println("  ╔" + SEP + "╗");
         System.out.println("  ║  " + title + sp(WIDTH - 2 - visLen(title)) + "║");
@@ -49,6 +49,14 @@ public class UI {
             i += Character.charCount(cp);
         }
         return len;
+    }
+
+    public static void sectionEnemy(String title) {
+        String wave = "v^".repeat(WIDTH / 2);
+        blank();
+        System.out.println("  " + wave);
+        System.out.println("  | " + title + sp(WIDTH - 1 - visLen(title)) + "|");
+        System.out.println("  " + wave);
     }
 
     public static void pause(int ms) {
