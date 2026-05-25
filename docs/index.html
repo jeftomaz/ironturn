@@ -420,32 +420,33 @@
                     <p class="box-txt">O <code>Hero</code> recebe uma <code>AttackStrategy</code> na criação. Trocar o comportamento é trocar o objeto — o <code>BattleEngine</code> não sabe qual estratégia está ativa.</p>
                 </div>
                 <ul class="flist" style="margin-top:1rem">
-                    <li><code style="color:var(--teal)">WarriorAttack</code> — dano físico com 5% de chance de crítico (2× dano)</li>
-                    <li><code style="color:var(--teal)">MageAttack</code> — dano fixo que <span style="color:var(--text)">ignora</span> a defesa do inimigo</li>
-                    <li>Adicionar uma nova classe? Só implementar a interface</li>
+                    <li><code style="color:var(--teal)">WarriorAttack</code> — dano físico com 5% de crítico; usa constantes nomeadas</li>
+                    <li><code style="color:var(--teal)">MageAttack</code> — uma linha: <code>return attacker.getAtk()</code>; ignora o target</li>
+                    <li>A interface recebe os <code>Character</code> completos — a strategy acessa qualquer atributo</li>
                 </ul>
             </div>
             <div class="code-block">
-                <div class="code-title">AttackStrategy.java · WarriorAttack.java · Hero.java</div>
-                <pre><span class="cmt">// Contrato: toda estratégia deve saber calcular dano</span>
-<span class="kw">public interface</span> <span class="cls">AttackStrategy</span> {
-    <span class="tp">int</span> <span class="fn">execute</span>(<span class="tp">int</span> atk, <span class="tp">int</span> def);
+                <div class="code-title">AttackStrategy.java · WarriorAttack.java · MageAttack.java</div>
+                <pre><span class="kw">public interface</span> <span class="cls">AttackStrategy</span> {
+    <span class="cmt">// Recebe objetos completos — não só primitivos</span>
+    <span class="tp">int</span> <span class="fn">execute</span>(<span class="cls">Character</span> attacker, <span class="cls">Character</span> target);
 }
 
 <span class="kw">public class</span> <span class="cls">WarriorAttack</span> <span class="kw">implements</span> <span class="cls">AttackStrategy</span> {
-    <span class="kw">public</span> <span class="tp">int</span> <span class="fn">execute</span>(<span class="tp">int</span> atk, <span class="tp">int</span> def) {
-        <span class="tp">boolean</span> crit = Math.<span class="fn">random</span>() &lt; <span class="num">0.05</span>;
-        <span class="tp">int</span> dmg = Math.<span class="fn">max</span>(<span class="num">1</span>, atk - def);
-        <span class="kw">return</span> crit ? dmg * <span class="num">2</span> : dmg; <span class="cmt">// crítico: 2× dano</span>
+    <span class="kw">private static final double</span> CRIT_CHANCE      = <span class="num">0.05</span>;
+    <span class="kw">private static final double</span> CRIT_MULTIPLIER  = <span class="num">2.0</span>;
+
+    <span class="kw">public</span> <span class="tp">int</span> <span class="fn">execute</span>(<span class="cls">Character</span> attacker, <span class="cls">Character</span> target) {
+        <span class="tp">int</span> base = attacker.<span class="fn">getAtk</span>() - target.<span class="fn">getDef</span>();
+        <span class="kw">if</span> (random.<span class="fn">nextDouble</span>() &lt; CRIT_CHANCE)
+            <span class="kw">return</span> (<span class="tp">int</span>)(base * CRIT_MULTIPLIER);
+        <span class="kw">return</span> Math.<span class="fn">max</span>(<span class="num">0</span>, base);
     }
 }
 
-<span class="kw">public class</span> <span class="cls">Hero</span> <span class="kw">extends</span> <span class="cls">Character</span> {
-    <span class="kw">private</span> <span class="cls">AttackStrategy</span> strategy; <span class="cmt">// injetado no construtor</span>
-
-    <span class="kw">public</span> <span class="tp">int</span> <span class="fn">attack</span>(<span class="cls">Character</span> target) {
-        <span class="cmt">// Hero não sabe o que é a strategy — só chama</span>
-        <span class="kw">return</span> strategy.<span class="fn">execute</span>(<span class="fn">getAtk</span>(), target.<span class="fn">getDef</span>());
+<span class="kw">public class</span> <span class="cls">MageAttack</span> <span class="kw">implements</span> <span class="cls">AttackStrategy</span> {
+    <span class="kw">public</span> <span class="tp">int</span> <span class="fn">execute</span>(<span class="cls">Character</span> attacker, <span class="cls">Character</span> target) {
+        <span class="kw">return</span> attacker.<span class="fn">getAtk</span>(); <span class="cmt">// target ignorado — ignora defesa</span>
     }
 }</pre>
             </div>
@@ -471,32 +472,35 @@
                     <p class="box-txt">Cada equipamento <em>envolve</em> o personagem anterior e delega tudo, sobrescrevendo apenas o atributo que modifica. Qualquer combinação funciona sem nova classe.</p>
                 </div>
                 <ul class="flist" style="margin-top:1rem">
-                    <li><code style="color:var(--orange)">SwordDecorator</code> &nbsp;— +10 ATK</li>
-                    <li><code style="color:var(--orange)">ShieldDecorator</code> — +8 DEF</li>
-                    <li><code style="color:var(--orange)">AmuletDecorator</code> — +5 ATK, +30 HP máximo</li>
-                    <li>Guerreiro recebe espada + escudo; Mago recebe amuleto</li>
+                    <li><code style="color:var(--orange)">SwordDecorator</code> — +10 ATK &nbsp;|&nbsp; <code style="color:var(--orange)">ShieldDecorator</code> — +8 DEF</li>
+                    <li><code style="color:var(--orange)">AmuletDecorator</code> — +5 ATK, +30 HP máximo (para o Mago)</li>
+                    <li>Guerreiro: <code>ShieldDecorator(SwordDecorator(h))</code> — dois wrappers empilhados</li>
                 </ul>
             </div>
             <div class="code-block">
-                <div class="code-title">CharacterDecorator.java · SwordDecorator.java · Main.java</div>
+                <div class="code-title">CharacterDecorator.java · SwordDecorator.java · BattleEngine.java</div>
                 <pre><span class="kw">public abstract class</span> <span class="cls">CharacterDecorator</span> <span class="kw">extends</span> <span class="cls">Character</span> {
-    <span class="kw">protected</span> <span class="cls">Character</span> wrapped;
-    <span class="kw">public</span> <span class="cls">CharacterDecorator</span>(<span class="cls">Character</span> c) { wrapped = c; }
+    <span class="kw">protected final</span> <span class="cls">Character</span> wrapped;
 
-    <span class="cmt">// Delega tudo por padrão — subclasses sobrescrevem o que mudam</span>
-    <span class="kw">public</span> <span class="tp">int</span> <span class="fn">getAtk</span>() { <span class="kw">return</span> wrapped.<span class="fn">getAtk</span>(); }
-    <span class="kw">public</span> <span class="tp">int</span> <span class="fn">getDef</span>() { <span class="kw">return</span> wrapped.<span class="fn">getDef</span>(); }
+    <span class="kw">public</span> <span class="cls">CharacterDecorator</span>(<span class="cls">Character</span> wrapped) {
+        <span class="cmt">// Inicializa o super com valores do wrapped...</span>
+        <span class="kw">super</span>(wrapped.<span class="fn">getName</span>(), wrapped.<span class="fn">getHp</span>(),
+              wrapped.<span class="fn">getMaxHp</span>(), wrapped.<span class="fn">getAtk</span>(), wrapped.<span class="fn">getDef</span>());
+        <span class="kw">this</span>.wrapped = wrapped;
+    }
+    <span class="cmt">// ...mas sobrescreve todos os getters para delegar ao wrapped</span>
+    <span class="kw">@Override public</span> <span class="tp">int</span>  <span class="fn">getAtk</span>()          { <span class="kw">return</span> wrapped.<span class="fn">getAtk</span>(); }
+    <span class="kw">@Override public void</span> <span class="fn">takeDamage</span>(<span class="tp">int</span> h) { wrapped.<span class="fn">takeDamage</span>(h); }
 }
 
 <span class="kw">public class</span> <span class="cls">SwordDecorator</span> <span class="kw">extends</span> <span class="cls">CharacterDecorator</span> {
+    <span class="kw">@Override</span>
     <span class="kw">public</span> <span class="tp">int</span> <span class="fn">getAtk</span>() { <span class="kw">return</span> wrapped.<span class="fn">getAtk</span>() + <span class="num">10</span>; }
 }
 
-<span class="cmt">// Em Main.java — empilhamento de wrappers:</span>
-<span class="cls">Character</span> hero = <span class="kw">new</span> <span class="cls">Hero</span>(<span class="str">"Arion"</span>, <span class="cls">HeroClass</span>.WARRIOR);
-hero = <span class="kw">new</span> <span class="cls">SwordDecorator</span>(hero);   <span class="cmt">// ATK + 10</span>
-hero = <span class="kw">new</span> <span class="cls">ShieldDecorator</span>(hero); <span class="cmt">// DEF + 8</span>
-<span class="cmt">// hero.getAtk() → base + 10  |  hero.getDef() → base + 8</span></pre>
+<span class="cmt">// Em BattleEngine.createHero() — composição em camadas:</span>
+h = <span class="kw">new</span> <span class="cls">Hero</span>(name, <span class="num">120</span>, <span class="num">120</span>, <span class="num">20</span>, <span class="num">15</span>, <span class="kw">new</span> <span class="cls">WarriorAttack</span>(), ...);
+equipped = <span class="kw">new</span> <span class="cls">ShieldDecorator</span>(<span class="kw">new</span> <span class="cls">SwordDecorator</span>(h));</pre>
             </div>
         </div>
     </div>
@@ -521,36 +525,34 @@ hero = <span class="kw">new</span> <span class="cls">ShieldDecorator</span>(hero
                 </div>
                 <ul class="flist" style="margin-top:1rem">
                     <li>Mago tem <span style="color:var(--blue)">1 uso de undo por inimigo</span> como habilidade especial</li>
-                    <li><code style="color:var(--blue)">AttackCommand.undo()</code> restaura o HP exato que foi subtraído</li>
-                    <li>O engine nunca precisa saber o que é reversível — o comando sabe</li>
+                    <li><code style="color:var(--blue)">AttackCommand</code> recebe os observers no construtor e notifica em <code>execute()</code></li>
+                    <li><code style="color:var(--blue)">undo()</code> restaura o HP exato e imprime a mensagem de reversão</li>
                 </ul>
             </div>
             <div class="code-block">
-                <div class="code-title">TurnCommand.java · AttackCommand.java · CommandHistory.java</div>
+                <div class="code-title">TurnCommand.java · AttackCommand.java</div>
                 <pre><span class="kw">public interface</span> <span class="cls">TurnCommand</span> {
     <span class="tp">void</span> <span class="fn">execute</span>();
     <span class="tp">void</span> <span class="fn">undo</span>();
 }
 
 <span class="kw">public class</span> <span class="cls">AttackCommand</span> <span class="kw">implements</span> <span class="cls">TurnCommand</span> {
-    <span class="kw">private int</span> damageDealt; <span class="cmt">// guardado para reverter</span>
+    <span class="kw">private final</span> <span class="cls">Character</span> attacker, target;
+    <span class="kw">private final</span> List&lt;<span class="cls">BattleObserver</span>&gt; observers;
+    <span class="kw">private int</span> damageDealt; <span class="cmt">// salvo para reverter</span>
 
-    <span class="kw">public void</span> <span class="fn">execute</span>() {
+    <span class="kw">@Override public void</span> <span class="fn">execute</span>() {
         damageDealt = attacker.<span class="fn">attack</span>(target);
         target.<span class="fn">takeDamage</span>(damageDealt);
-        <span class="fn">notify</span>(<span class="kw">new</span> <span class="cls">BattleEvent</span>(...)); <span class="cmt">// dispara observers</span>
+        <span class="cmt">// Command dispara os Observers diretamente</span>
+        <span class="cls">BattleEvent</span> event = <span class="kw">new</span> <span class="cls">BattleEvent</span>(attacker, target, damageDealt);
+        <span class="kw">for</span> (<span class="cls">BattleObserver</span> o : observers) o.<span class="fn">onEvent</span>(event);
     }
 
-    <span class="kw">public void</span> <span class="fn">undo</span>() {
+    <span class="kw">@Override public void</span> <span class="fn">undo</span>() {
         target.<span class="fn">heal</span>(damageDealt); <span class="cmt">// reverte o dano exato</span>
-    }
-}
-
-<span class="kw">public class</span> <span class="cls">CommandHistory</span> {
-    <span class="kw">private</span> Deque&lt;<span class="cls">TurnCommand</span>&gt; stack = <span class="kw">new</span> <span class="cls">ArrayDeque</span>&lt;&gt;();
-
-    <span class="kw">public void</span> <span class="fn">undo</span>() {
-        <span class="kw">if</span> (!stack.<span class="fn">isEmpty</span>()) stack.<span class="fn">pop</span>().<span class="fn">undo</span>(); <span class="cmt">// LIFO</span>
+        System.out.<span class="fn">println</span>(<span class="str">"✦ "</span> + attacker.<span class="fn">getName</span>()
+            + <span class="str">" reverte o tempo - o dano foi desfeito."</span>);
     }
 }</pre>
             </div>
@@ -573,37 +575,37 @@ hero = <span class="kw">new</span> <span class="cls">ShieldDecorator</span>(hero
                 </div>
                 <div class="sol-box">
                     <div class="box-lbl s">Com Observer</div>
-                    <p class="box-txt">O engine dispara um <code>BattleEvent</code> imutável para todos os observers registrados. Adicionar um novo componente é só implementar a interface e chamar <code>addObserver()</code>.</p>
+                    <p class="box-txt">O <code>AttackCommand</code> recebe a lista de observers e dispara um <code>BattleEvent</code> após cada ação. Adicionar um novo listener é só implementar a interface e registrar em <code>setup()</code>.</p>
                 </div>
                 <ul class="flist" style="margin-top:1rem">
                     <li><code style="color:var(--green)">BattleLogger</code> — registra histórico completo da partida</li>
                     <li><code style="color:var(--green)">StatusDisplay</code> — exibe barras de HP após cada evento</li>
-                    <li><code style="color:var(--green)">BattleEvent</code> — objeto imutável: tipo, ator, alvo, valor</li>
+                    <li><code style="color:var(--green)">BattleEvent</code> — classe com campos <code>final</code>; imutável por design</li>
                 </ul>
             </div>
             <div class="code-block">
                 <div class="code-title">BattleObserver.java · BattleEvent.java · BattleEngine.java</div>
                 <pre><span class="kw">public interface</span> <span class="cls">BattleObserver</span> {
-    <span class="tp">void</span> <span class="fn">onEvent</span>(<span class="cls">BattleEvent</span> event);
+    <span class="tp">void</span> <span class="fn">onEvent</span>(<span class="cls">BattleEvent</span> battleEvent);
 }
 
-<span class="cmt">// Record imutável — thread-safe por design</span>
-<span class="kw">public record</span> <span class="cls">BattleEvent</span>(
-    <span class="cls">String</span> type, <span class="cls">String</span> actor,
-    <span class="cls">String</span> target, <span class="tp">int</span> value
-) {}
+<span class="cmt">// Classe com campos final — imutável sem ser record</span>
+<span class="kw">public class</span> <span class="cls">BattleEvent</span> {
+    <span class="kw">private final</span> <span class="cls">Character</span> attacker, target;
+    <span class="kw">private final int</span> hitTaken;
 
-<span class="kw">public class</span> <span class="cls">BattleEngine</span> {
-    <span class="kw">private</span> List&lt;<span class="cls">BattleObserver</span>&gt; observers = <span class="kw">new</span> <span class="cls">ArrayList</span>&lt;&gt;();
-
-    <span class="kw">private void</span> <span class="fn">notify</span>(<span class="cls">BattleEvent</span> e) {
-        observers.<span class="fn">forEach</span>(o -> o.<span class="fn">onEvent</span>(e)); <span class="cmt">// broadcast</span>
-    }
+    <span class="kw">public</span> <span class="cls">BattleEvent</span>(<span class="cls">Character</span> a, <span class="cls">Character</span> t, <span class="tp">int</span> hit) { ... }
+    <span class="kw">public int</span> <span class="fn">getHitTaken</span>() { <span class="kw">return</span> hitTaken; }
 }
 
-<span class="cmt">// Em Main.java — registro dos observers:</span>
-engine.<span class="fn">addObserver</span>(<span class="kw">new</span> <span class="cls">BattleLogger</span>());
-engine.<span class="fn">addObserver</span>(<span class="kw">new</span> <span class="cls">StatusDisplay</span>());</pre>
+<span class="cmt">// Em BattleEngine.setup() — registro dos observers:</span>
+observers.<span class="fn">add</span>(<span class="kw">new</span> <span class="cls">BattleLogger</span>());
+observers.<span class="fn">add</span>(<span class="kw">new</span> <span class="cls">StatusDisplay</span>());
+
+<span class="cmt">// A notificação ocorre em AttackCommand.execute():</span>
+<span class="cls">BattleEvent</span> event = <span class="kw">new</span> <span class="cls">BattleEvent</span>(attacker, target, damageDealt);
+<span class="kw">for</span> (<span class="cls">BattleObserver</span> observer : observers)
+    observer.<span class="fn">onEvent</span>(event); <span class="cmt">// broadcast para todos</span></pre>
             </div>
         </div>
     </div>
@@ -616,24 +618,26 @@ engine.<span class="fn">addObserver</span>(<span class="kw">new</span> <span cla
             <h2 class="slide-h2">Como Tudo se Conecta</h2>
         </div>
         <div style="display:flex;justify-content:center;align-items:center;flex:1">
-            <div class="arch-box"><span style="color:var(--gold)">Main.java</span>
+            <div class="arch-box"><span style="color:var(--gold)">BattleEngine.setup()</span>
                 │
-                ├─ cria <span style="color:var(--orange)">Hero</span>  ──  envolve com <span style="color:var(--orange)">Decorators</span> (Sword, Shield, Amulet)   ◀ <span style="color:var(--orange)">Decorator</span>
-                │         └─  injeta <span style="color:var(--teal)">AttackStrategy</span> (Warrior ou Mage)           ◀ <span style="color:var(--teal)">Strategy</span>
+                ├─ createHero()
+                │    ├─ new Hero(..., <span style="color:var(--teal)">new WarriorAttack()</span>)         ◀ <span style="color:var(--teal)">Strategy</span> injetada
+                │    └─ equipped = <span style="color:var(--orange)">ShieldDecorator(SwordDecorator(h))</span> ◀ <span style="color:var(--orange)">Decorator</span> empilhado
                 │
-                └─ instancia <span style="color:var(--gold)">BattleEngine</span>
+                └─ observers.add(<span style="color:var(--green)">new BattleLogger()</span>)             ◀ <span style="color:var(--green)">Observer</span> registrado
+                observers.add(<span style="color:var(--green)">new StatusDisplay()</span>)
+
+                <span style="color:var(--gold)">BattleEngine.loop()</span>  — a cada turno:
                 │
-                ├─ registra <span style="color:var(--green)">BattleLogger</span>    ◀──────────────────────────── <span style="color:var(--green)">Observer</span>
-                ├─ registra <span style="color:var(--green)">StatusDisplay</span>  ◀────────────────────────────
+                └─ new <span style="color:var(--blue)">AttackCommand(equipped, enemy, observers)</span>  ◀ <span style="color:var(--blue)">Command</span> criado
                 │
-                └─ loop de turnos
+                ├─ execute()
+                │    ├─ attacker.attack(target)    → <span style="color:var(--teal)">Strategy.execute()</span> chamada aqui
+                │    ├─ target.takeDamage()        → <span style="color:var(--orange)">Decorator</span> delega ao wrapped
+                │    └─ for observer → onEvent()   → <span style="color:var(--green)">Observer</span> notificado aqui
                 │
-                ├─ cria <span style="color:var(--blue)">AttackCommand</span>                                    ◀ <span style="color:var(--blue)">Command</span>
-                ├─ command.<span style="color:var(--purple)">execute()</span>
-                │    └─ notify(BattleEvent) ─────────────────────► todos os observers
-                │
-                └─ [Mago] command.<span style="color:var(--purple)">undo()</span>
-                └─ reverte HP do último turno (1× por inimigo)</div>
+                └─ [Mago] undo()
+                └─ target.heal(damageDealt)  → HP revertido com precisão</div>
         </div>
     </div>
 
