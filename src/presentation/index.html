@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IronTurn — Padrões de Projeto</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Fira+Code:wght@300;400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --surface2: #1e2530;
+            --border: #30363d;
+            --gold: #d4a017;
+            --gold-glow: rgba(212,160,23,0.15);
+            --teal: #58c4dc;
+            --blue: #79c0ff;
+            --green: #7ee787;
+            --orange: #ffa657;
+            --red: #f85149;
+            --purple: #d2a8ff;
+            --text: #e6edf3;
+            --muted: #8b949e;
+            --dim: #484f58;
+        }
+
+        html, body { height: 100%; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ── Scan-line overlay ── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(
+                    0deg, transparent, transparent 3px,
+                    rgba(0,0,0,0.025) 3px, rgba(0,0,0,0.025) 4px
+            );
+            pointer-events: none;
+            z-index: 200;
+        }
+
+        /* ── Slide engine ── */
+        .slideshow { width: 100vw; height: 100vh; position: relative; }
+
+        .slide {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            padding: 2.5rem 5rem 5rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        .slide.active { opacity: 1; pointer-events: all; }
+
+        /* ── Corner decorations ── */
+        .deco {
+            position: fixed;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.65rem;
+            color: var(--dim);
+            z-index: 100;
+            letter-spacing: 0.05em;
+        }
+        .deco-tl { top: 1.4rem; left: 2.5rem; }
+        .deco-tr { top: 1.4rem; right: 2.5rem; text-align: right; }
+        .deco-bl { bottom: 1.8rem; left: 2.5rem; }
+
+        /* ── Navigation ── */
+        .nav {
+            position: fixed;
+            bottom: 1.6rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            z-index: 100;
+        }
+        .nav-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .nav-btn:hover { color: var(--text); border-color: var(--gold); }
+        .nav-dots { display: flex; gap: 5px; align-items: center; }
+        .nav-dot {
+            width: 5px; height: 5px;
+            border-radius: 50%;
+            background: var(--dim);
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+        .nav-dot.active { background: var(--gold); width: 16px; border-radius: 3px; }
+
+        /* ── Slide header ── */
+        .slide-header {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            padding-bottom: 1.25rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1.75rem;
+            flex-shrink: 0;
+        }
+        .slide-h2 {
+            font-family: 'Cinzel', serif;
+            font-size: 1.65rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        /* ── Pattern tags ── */
+        .ptag {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.72rem;
+            padding: 3px 10px;
+            border-radius: 4px;
+            border: 1px solid;
+            flex-shrink: 0;
+        }
+        .pt-s  { color: var(--teal);   border-color: var(--teal);   }
+        .pt-d  { color: var(--orange); border-color: var(--orange); }
+        .pt-c  { color: var(--blue);   border-color: var(--blue);   }
+        .pt-o  { color: var(--green);  border-color: var(--green);  }
+
+        /* ── Problem / solution boxes ── */
+        .prob-box, .sol-box {
+            border-radius: 7px;
+            padding: 0.65rem 1rem;
+            margin-bottom: 0.9rem;
+        }
+        .prob-box { background: rgba(248,81,73,0.07);  border: 1px solid rgba(248,81,73,0.22); }
+        .sol-box  { background: rgba(126,231,135,0.05); border: 1px solid rgba(126,231,135,0.18); }
+        .box-lbl {
+            font-size: 0.62rem;
+            font-weight: 600;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin-bottom: 0.35rem;
+        }
+        .box-lbl.d { color: var(--red); }
+        .box-lbl.s { color: var(--green); }
+        .box-txt { font-size: 0.875rem; color: var(--muted); line-height: 1.65; }
+        .box-txt code { font-family: 'Fira Code', monospace; font-size: 0.82rem; color: var(--text); }
+
+        /* ── Feature list ── */
+        .flist { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.75rem; }
+        .flist li {
+            display: flex; align-items: flex-start; gap: 0.7rem;
+            font-size: 0.875rem; color: var(--muted); line-height: 1.55;
+        }
+        .flist li::before { content: '▸'; color: var(--gold); flex-shrink: 0; margin-top: 1px; }
+        .flist li code { font-family: 'Fira Code', monospace; font-size: 0.8rem; }
+
+        /* ── Code block ── */
+        .code-block {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.1rem 1.4rem;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .code-title {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.65rem;
+            color: var(--dim);
+            padding-bottom: 0.75rem;
+            margin-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            letter-spacing: 0.04em;
+        }
+        pre {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.78rem;
+            line-height: 1.75;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* ── Syntax colours ── */
+        .kw  { color: var(--teal); }
+        .tp  { color: var(--blue); }
+        .fn  { color: var(--purple); }
+        .str { color: var(--orange); }
+        .cmt { color: var(--dim); font-style: italic; }
+        .num { color: var(--green); }
+        .cls { color: #ffa657; }
+
+        /* ── Split layout ── */
+        .split {
+            display: grid;
+            grid-template-columns: 1fr 1.15fr;
+            gap: 2rem;
+            flex: 1;
+            min-height: 0;
+        }
+        .split-left { display: flex; flex-direction: column; justify-content: center; gap: 0; }
+
+        /* ────────────────────────────────────
+           SLIDE 1 — TITLE
+        ───────────────────────────────────── */
+        #s1 {
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            gap: 0;
+            padding: 0;
+        }
+        .game-title {
+            font-family: 'Cinzel', serif;
+            font-size: 6.5rem;
+            font-weight: 700;
+            color: var(--gold);
+            letter-spacing: 0.08em;
+            line-height: 1;
+            text-shadow: 0 0 60px rgba(212,160,23,0.25);
+        }
+        .game-sub {
+            font-size: 1rem;
+            color: var(--muted);
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            font-weight: 300;
+            margin-top: 1rem;
+        }
+        .tag-row { display: flex; gap: 0.7rem; justify-content: center; flex-wrap: wrap; margin-top: 2rem; }
+        .hint {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.72rem;
+            color: var(--dim);
+            margin-top: 3rem;
+            letter-spacing: 0.05em;
+        }
+
+        /* ────────────────────────────────────
+           SLIDE 2 — OVERVIEW
+        ───────────────────────────────────── */
+        .pat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
+        .pat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            padding: 1rem 1.1rem;
+            transition: border-color 0.2s;
+        }
+        .pat-card:hover { border-color: var(--gold); }
+        .pat-card-top { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem; }
+        .pat-card-name { font-family: 'Cinzel', serif; font-size: 0.95rem; font-weight: 600; }
+        .pat-card-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.55; }
+
+        /* ────────────────────────────────────
+           SLIDE 7 — ARCHITECTURE
+        ───────────────────────────────────── */
+        .arch-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.5rem 2rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.82rem;
+            line-height: 2;
+            white-space: pre;
+            color: var(--muted);
+        }
+
+        /* ────────────────────────────────────
+           SLIDE 8 — DEMO
+        ───────────────────────────────────── */
+        .demo-cmd {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            padding: 0.65rem 1.2rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.88rem;
+            color: var(--green);
+            width: 100%;
+            max-width: 560px;
+        }
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.85rem;
+            margin-top: 1.75rem;
+            max-width: 860px;
+            width: 100%;
+        }
+        .demo-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.9rem 1rem;
+            text-align: center;
+        }
+        .demo-card-lbl {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.68rem;
+            margin-bottom: 0.45rem;
+        }
+        .demo-card-txt { font-size: 0.78rem; color: var(--muted); line-height: 1.55; }
+    </style>
+</head>
+<body>
+
+<div class="deco deco-tl">IronTurn v1.0 &nbsp;// Java 17</div>
+<div class="deco deco-tr" id="slide-id">slide_01</div>
+<div class="deco deco-bl">← → para navegar</div>
+
+<div class="slideshow">
+
+    <!-- ══════════════════════════════════
+         SLIDE 1 — TITLE
+    ═══════════════════════════════════ -->
+    <div class="slide active" id="s1">
+        <h1 class="game-title">IronTurn</h1>
+        <p class="game-sub">RPG por Turnos em Java Puro</p>
+        <div class="tag-row">
+            <span class="ptag pt-s">Strategy</span>
+            <span class="ptag pt-d">Decorator</span>
+            <span class="ptag pt-c">Command</span>
+            <span class="ptag pt-o">Observer</span>
+        </div>
+        <p class="hint">Padrões de Projetos de Software &nbsp;·&nbsp; 4 padrões em 1 aplicação</p>
+    </div>
+
+    <!-- ══════════════════════════════════
+         SLIDE 2 — OVERVIEW
+    ═══════════════════════════════════ -->
+    <div class="slide" id="s2">
+        <div class="slide-header">
+            <h2 class="slide-h2">O Projeto</h2>
+        </div>
+        <div class="split" style="grid-template-columns: 1fr 1.1fr;">
+            <div class="split-left" style="gap:1rem">
+                <p style="color:var(--muted);font-size:0.92rem;line-height:1.8">
+                    RPG de console com <span style="color:var(--text)">2 classes de herói</span> e <span style="color:var(--text)">3 inimigos</span> — Java puro, sem frameworks.
+                </p>
+                <p style="color:var(--muted);font-size:0.88rem;line-height:1.75">
+                    O desafio de design: cada aspecto do jogo precisava ser <span style="color:var(--gold)">extensível</span> e <span style="color:var(--gold)">desacoplado</span> sem criar uma hierarquia de herança impossível de manter.
+                </p>
+                <ul class="flist">
+                    <li>Guerreiro e Mago com comportamentos de ataque distintos</li>
+                    <li>Equipamentos que modificam atributos sem proliferar subclasses</li>
+                    <li>Ações de turno reversíveis — habilidade exclusiva do Mago</li>
+                    <li>Log e barras de HP atualizados automaticamente a cada evento</li>
+                </ul>
+            </div>
+            <div class="pat-grid" style="align-content:center">
+                <div class="pat-card">
+                    <div class="pat-card-top">
+                        <span style="font-size:1.1rem">⚔</span>
+                        <span class="pat-card-name" style="color:var(--teal)">Strategy</span>
+                    </div>
+                    <p class="pat-card-desc">Comportamento de ataque por classe — injetado no herói na criação</p>
+                </div>
+                <div class="pat-card">
+                    <div class="pat-card-top">
+                        <span style="font-size:1.1rem">🛡</span>
+                        <span class="pat-card-name" style="color:var(--orange)">Decorator</span>
+                    </div>
+                    <p class="pat-card-desc">Equipamentos somam bônus por composição, sem herança</p>
+                </div>
+                <div class="pat-card">
+                    <div class="pat-card-top">
+                        <span style="font-size:1.1rem">↩</span>
+                        <span class="pat-card-name" style="color:var(--blue)">Command</span>
+                    </div>
+                    <p class="pat-card-desc">Ações do turno como objetos — com <code style="font-size:0.78rem">execute()</code> e <code style="font-size:0.78rem">undo()</code></p>
+                </div>
+                <div class="pat-card">
+                    <div class="pat-card-top">
+                        <span style="font-size:1.1rem">📡</span>
+                        <span class="pat-card-name" style="color:var(--green)">Observer</span>
+                    </div>
+                    <p class="pat-card-desc">Log e status notificados automaticamente por cada evento de batalha</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         SLIDE 3 — STRATEGY
+    ═══════════════════════════════════ -->
+    <div class="slide" id="s3">
+        <div class="slide-header">
+            <span class="ptag pt-s">Strategy</span>
+            <h2 class="slide-h2">Comportamento de Ataque</h2>
+        </div>
+        <div class="split">
+            <div class="split-left">
+                <div class="prob-box">
+                    <div class="box-lbl d">Sem o padrão</div>
+                    <p class="box-txt">Um <code>if/else</code> gigante no loop de batalha: <em>"se guerreiro, aplica crítico; se mago, ignora defesa…"</em> — frágil e impossível de estender.</p>
+                </div>
+                <div class="sol-box">
+                    <div class="box-lbl s">Com Strategy</div>
+                    <p class="box-txt">O <code>Hero</code> recebe uma <code>AttackStrategy</code> na criação. Trocar o comportamento é trocar o objeto — o <code>BattleEngine</code> não sabe qual estratégia está ativa.</p>
+                </div>
+                <ul class="flist" style="margin-top:1rem">
+                    <li><code style="color:var(--teal)">WarriorAttack</code> — dano físico com 5% de chance de crítico (2× dano)</li>
+                    <li><code style="color:var(--teal)">MageAttack</code> — dano fixo que <span style="color:var(--text)">ignora</span> a defesa do inimigo</li>
+                    <li>Adicionar uma nova classe? Só implementar a interface</li>
+                </ul>
+            </div>
+            <div class="code-block">
+                <div class="code-title">AttackStrategy.java · WarriorAttack.java · Hero.java</div>
+                <pre><span class="cmt">// Contrato: toda estratégia deve saber calcular dano</span>
+<span class="kw">public interface</span> <span class="cls">AttackStrategy</span> {
+    <span class="tp">int</span> <span class="fn">execute</span>(<span class="tp">int</span> atk, <span class="tp">int</span> def);
+}
+
+<span class="kw">public class</span> <span class="cls">WarriorAttack</span> <span class="kw">implements</span> <span class="cls">AttackStrategy</span> {
+    <span class="kw">public</span> <span class="tp">int</span> <span class="fn">execute</span>(<span class="tp">int</span> atk, <span class="tp">int</span> def) {
+        <span class="tp">boolean</span> crit = Math.<span class="fn">random</span>() &lt; <span class="num">0.05</span>;
+        <span class="tp">int</span> dmg = Math.<span class="fn">max</span>(<span class="num">1</span>, atk - def);
+        <span class="kw">return</span> crit ? dmg * <span class="num">2</span> : dmg; <span class="cmt">// crítico: 2× dano</span>
+    }
+}
+
+<span class="kw">public class</span> <span class="cls">Hero</span> <span class="kw">extends</span> <span class="cls">Character</span> {
+    <span class="kw">private</span> <span class="cls">AttackStrategy</span> strategy; <span class="cmt">// injetado no construtor</span>
+
+    <span class="kw">public</span> <span class="tp">int</span> <span class="fn">attack</span>(<span class="cls">Character</span> target) {
+        <span class="cmt">// Hero não sabe o que é a strategy — só chama</span>
+        <span class="kw">return</span> strategy.<span class="fn">execute</span>(<span class="fn">getAtk</span>(), target.<span class="fn">getDef</span>());
+    }
+}</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         SLIDE 4 — DECORATOR
+    ═══════════════════════════════════ -->
+    <div class="slide" id="s4">
+        <div class="slide-header">
+            <span class="ptag pt-d">Decorator</span>
+            <h2 class="slide-h2">Equipamentos como Wrappers</h2>
+        </div>
+        <div class="split">
+            <div class="split-left">
+                <div class="prob-box">
+                    <div class="box-lbl d">Sem o padrão</div>
+                    <p class="box-txt">Uma subclasse por combinação: <code>GuerreiroComEspada</code>, <code>GuerreiroComEspadaEEscudo</code>… Explosão combinatória de classes.</p>
+                </div>
+                <div class="sol-box">
+                    <div class="box-lbl s">Com Decorator</div>
+                    <p class="box-txt">Cada equipamento <em>envolve</em> o personagem anterior e delega tudo, sobrescrevendo apenas o atributo que modifica. Qualquer combinação funciona sem nova classe.</p>
+                </div>
+                <ul class="flist" style="margin-top:1rem">
+                    <li><code style="color:var(--orange)">SwordDecorator</code> &nbsp;— +10 ATK</li>
+                    <li><code style="color:var(--orange)">ShieldDecorator</code> — +8 DEF</li>
+                    <li><code style="color:var(--orange)">AmuletDecorator</code> — +5 ATK, +30 HP máximo</li>
+                    <li>Guerreiro recebe espada + escudo; Mago recebe amuleto</li>
+                </ul>
+            </div>
+            <div class="code-block">
+                <div class="code-title">CharacterDecorator.java · SwordDecorator.java · Main.java</div>
+                <pre><span class="kw">public abstract class</span> <span class="cls">CharacterDecorator</span> <span class="kw">extends</span> <span class="cls">Character</span> {
+    <span class="kw">protected</span> <span class="cls">Character</span> wrapped;
+    <span class="kw">public</span> <span class="cls">CharacterDecorator</span>(<span class="cls">Character</span> c) { wrapped = c; }
+
+    <span class="cmt">// Delega tudo por padrão — subclasses sobrescrevem o que mudam</span>
+    <span class="kw">public</span> <span class="tp">int</span> <span class="fn">getAtk</span>() { <span class="kw">return</span> wrapped.<span class="fn">getAtk</span>(); }
+    <span class="kw">public</span> <span class="tp">int</span> <span class="fn">getDef</span>() { <span class="kw">return</span> wrapped.<span class="fn">getDef</span>(); }
+}
+
+<span class="kw">public class</span> <span class="cls">SwordDecorator</span> <span class="kw">extends</span> <span class="cls">CharacterDecorator</span> {
+    <span class="kw">public</span> <span class="tp">int</span> <span class="fn">getAtk</span>() { <span class="kw">return</span> wrapped.<span class="fn">getAtk</span>() + <span class="num">10</span>; }
+}
+
+<span class="cmt">// Em Main.java — empilhamento de wrappers:</span>
+<span class="cls">Character</span> hero = <span class="kw">new</span> <span class="cls">Hero</span>(<span class="str">"Arion"</span>, <span class="cls">HeroClass</span>.WARRIOR);
+hero = <span class="kw">new</span> <span class="cls">SwordDecorator</span>(hero);   <span class="cmt">// ATK + 10</span>
+hero = <span class="kw">new</span> <span class="cls">ShieldDecorator</span>(hero); <span class="cmt">// DEF + 8</span>
+<span class="cmt">// hero.getAtk() → base + 10  |  hero.getDef() → base + 8</span></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         SLIDE 5 — COMMAND
+    ═══════════════════════════════════ -->
+    <div class="slide" id="s5">
+        <div class="slide-header">
+            <span class="ptag pt-c">Command</span>
+            <h2 class="slide-h2">Ações de Turno com Undo</h2>
+        </div>
+        <div class="split">
+            <div class="split-left">
+                <div class="prob-box">
+                    <div class="box-lbl d">Sem o padrão</div>
+                    <p class="box-txt">Para reverter um ataque o engine precisaria guardar estado manual de cada operação — frágil, acoplado e impossível de generalizar para novos tipos de ação.</p>
+                </div>
+                <div class="sol-box">
+                    <div class="box-lbl s">Com Command</div>
+                    <p class="box-txt">Cada ação é um objeto com <code>execute()</code> e <code>undo()</code>. O <code>CommandHistory</code> mantém uma pilha LIFO — reverter é só desempilhar e chamar <code>undo()</code>.</p>
+                </div>
+                <ul class="flist" style="margin-top:1rem">
+                    <li>Mago tem <span style="color:var(--blue)">1 uso de undo por inimigo</span> como habilidade especial</li>
+                    <li><code style="color:var(--blue)">AttackCommand.undo()</code> restaura o HP exato que foi subtraído</li>
+                    <li>O engine nunca precisa saber o que é reversível — o comando sabe</li>
+                </ul>
+            </div>
+            <div class="code-block">
+                <div class="code-title">TurnCommand.java · AttackCommand.java · CommandHistory.java</div>
+                <pre><span class="kw">public interface</span> <span class="cls">TurnCommand</span> {
+    <span class="tp">void</span> <span class="fn">execute</span>();
+    <span class="tp">void</span> <span class="fn">undo</span>();
+}
+
+<span class="kw">public class</span> <span class="cls">AttackCommand</span> <span class="kw">implements</span> <span class="cls">TurnCommand</span> {
+    <span class="kw">private int</span> damageDealt; <span class="cmt">// guardado para reverter</span>
+
+    <span class="kw">public void</span> <span class="fn">execute</span>() {
+        damageDealt = attacker.<span class="fn">attack</span>(target);
+        target.<span class="fn">takeDamage</span>(damageDealt);
+        <span class="fn">notify</span>(<span class="kw">new</span> <span class="cls">BattleEvent</span>(...)); <span class="cmt">// dispara observers</span>
+    }
+
+    <span class="kw">public void</span> <span class="fn">undo</span>() {
+        target.<span class="fn">heal</span>(damageDealt); <span class="cmt">// reverte o dano exato</span>
+    }
+}
+
+<span class="kw">public class</span> <span class="cls">CommandHistory</span> {
+    <span class="kw">private</span> Deque&lt;<span class="cls">TurnCommand</span>&gt; stack = <span class="kw">new</span> <span class="cls">ArrayDeque</span>&lt;&gt;();
+
+    <span class="kw">public void</span> <span class="fn">undo</span>() {
+        <span class="kw">if</span> (!stack.<span class="fn">isEmpty</span>()) stack.<span class="fn">pop</span>().<span class="fn">undo</span>(); <span class="cmt">// LIFO</span>
+    }
+}</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         SLIDE 6 — OBSERVER
+    ═══════════════════════════════════ -->
+    <div class="slide" id="s6">
+        <div class="slide-header">
+            <span class="ptag pt-o">Observer</span>
+            <h2 class="slide-h2">Eventos de Batalha</h2>
+        </div>
+        <div class="split">
+            <div class="split-left">
+                <div class="prob-box">
+                    <div class="box-lbl d">Sem o padrão</div>
+                    <p class="box-txt">O <code>BattleEngine</code> chamaria explicitamente o logger e o display em cada ação — acoplamento direto. Adicionar um novo listener exigiria modificar o engine.</p>
+                </div>
+                <div class="sol-box">
+                    <div class="box-lbl s">Com Observer</div>
+                    <p class="box-txt">O engine dispara um <code>BattleEvent</code> imutável para todos os observers registrados. Adicionar um novo componente é só implementar a interface e chamar <code>addObserver()</code>.</p>
+                </div>
+                <ul class="flist" style="margin-top:1rem">
+                    <li><code style="color:var(--green)">BattleLogger</code> — registra histórico completo da partida</li>
+                    <li><code style="color:var(--green)">StatusDisplay</code> — exibe barras de HP após cada evento</li>
+                    <li><code style="color:var(--green)">BattleEvent</code> — objeto imutável: tipo, ator, alvo, valor</li>
+                </ul>
+            </div>
+            <div class="code-block">
+                <div class="code-title">BattleObserver.java · BattleEvent.java · BattleEngine.java</div>
+                <pre><span class="kw">public interface</span> <span class="cls">BattleObserver</span> {
+    <span class="tp">void</span> <span class="fn">onEvent</span>(<span class="cls">BattleEvent</span> event);
+}
+
+<span class="cmt">// Record imutável — thread-safe por design</span>
+<span class="kw">public record</span> <span class="cls">BattleEvent</span>(
+    <span class="cls">String</span> type, <span class="cls">String</span> actor,
+    <span class="cls">String</span> target, <span class="tp">int</span> value
+) {}
+
+<span class="kw">public class</span> <span class="cls">BattleEngine</span> {
+    <span class="kw">private</span> List&lt;<span class="cls">BattleObserver</span>&gt; observers = <span class="kw">new</span> <span class="cls">ArrayList</span>&lt;&gt;();
+
+    <span class="kw">private void</span> <span class="fn">notify</span>(<span class="cls">BattleEvent</span> e) {
+        observers.<span class="fn">forEach</span>(o -> o.<span class="fn">onEvent</span>(e)); <span class="cmt">// broadcast</span>
+    }
+}
+
+<span class="cmt">// Em Main.java — registro dos observers:</span>
+engine.<span class="fn">addObserver</span>(<span class="kw">new</span> <span class="cls">BattleLogger</span>());
+engine.<span class="fn">addObserver</span>(<span class="kw">new</span> <span class="cls">StatusDisplay</span>());</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         SLIDE 7 — ARCHITECTURE
+    ═══════════════════════════════════ -->
+    <div class="slide" id="s7">
+        <div class="slide-header">
+            <h2 class="slide-h2">Como Tudo se Conecta</h2>
+        </div>
+        <div style="display:flex;justify-content:center;align-items:center;flex:1">
+            <div class="arch-box"><span style="color:var(--gold)">Main.java</span>
+                │
+                ├─ cria <span style="color:var(--orange)">Hero</span>  ──  envolve com <span style="color:var(--orange)">Decorators</span> (Sword, Shield, Amulet)   ◀ <span style="color:var(--orange)">Decorator</span>
+                │         └─  injeta <span style="color:var(--teal)">AttackStrategy</span> (Warrior ou Mage)           ◀ <span style="color:var(--teal)">Strategy</span>
+                │
+                └─ instancia <span style="color:var(--gold)">BattleEngine</span>
+                │
+                ├─ registra <span style="color:var(--green)">BattleLogger</span>    ◀──────────────────────────── <span style="color:var(--green)">Observer</span>
+                ├─ registra <span style="color:var(--green)">StatusDisplay</span>  ◀────────────────────────────
+                │
+                └─ loop de turnos
+                │
+                ├─ cria <span style="color:var(--blue)">AttackCommand</span>                                    ◀ <span style="color:var(--blue)">Command</span>
+                ├─ command.<span style="color:var(--purple)">execute()</span>
+                │    └─ notify(BattleEvent) ─────────────────────► todos os observers
+                │
+                └─ [Mago] command.<span style="color:var(--purple)">undo()</span>
+                └─ reverte HP do último turno (1× por inimigo)</div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         SLIDE 8 — DEMO
+    ═══════════════════════════════════ -->
+    <div class="slide" id="s8" style="align-items:center;justify-content:center;gap:0;padding-bottom:5rem">
+        <div class="slide-header" style="width:100%;justify-content:center">
+            <h2 class="slide-h2">Demonstração</h2>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0.6rem;margin-top:0.5rem">
+            <p style="color:var(--muted);font-size:0.88rem;margin-bottom:0.3rem">Compilar e executar a partir da raiz do projeto:</p>
+            <div class="demo-cmd">$ find src -name "*.java" &gt; sources.txt</div>
+            <div class="demo-cmd">$ javac -d out @sources.txt</div>
+            <div class="demo-cmd">$ java -cp out ironturn.Main</div>
+        </div>
+        <div class="demo-grid">
+            <div class="demo-card">
+                <p class="demo-card-lbl" style="color:var(--teal)">Strategy</p>
+                <p class="demo-card-txt">Observe como Guerreiro e Mago produzem dano de formas distintas</p>
+            </div>
+            <div class="demo-card">
+                <p class="demo-card-lbl" style="color:var(--orange)">Decorator</p>
+                <p class="demo-card-txt">Note ATK e DEF aumentados pelos equipamentos no status</p>
+            </div>
+            <div class="demo-card">
+                <p class="demo-card-lbl" style="color:var(--blue)">Command</p>
+                <p class="demo-card-txt">Escolha o Mago e use [2] para reverter o ataque sofrido</p>
+            </div>
+            <div class="demo-card">
+                <p class="demo-card-lbl" style="color:var(--green)">Observer</p>
+                <p class="demo-card-txt">Cada ação atualiza o log e as barras de HP automaticamente</p>
+            </div>
+        </div>
+        <p style="color:var(--dim);font-family:'Fira Code',monospace;font-size:0.72rem;margin-top:1.5rem">
+            Requisito: Java 17+ &nbsp;·&nbsp; sem dependências externas
+        </p>
+    </div>
+
+</div><!-- /slideshow -->
+
+<!-- Navigation -->
+<div class="nav">
+    <button class="nav-btn" onclick="go(-1)">←</button>
+    <div class="nav-dots" id="dots"></div>
+    <button class="nav-btn" onclick="go(1)">→</button>
+</div>
+
+<script>
+    const slides = document.querySelectorAll('.slide');
+    const dotsEl = document.getElementById('dots');
+    const slideIdEl = document.getElementById('slide-id');
+    let cur = 0;
+
+    slides.forEach((_, i) => {
+        const d = document.createElement('div');
+        d.className = 'nav-dot' + (i === 0 ? ' active' : '');
+        d.onclick = () => goTo(i);
+        dotsEl.appendChild(d);
+    });
+
+    function goTo(n) {
+        slides[cur].classList.remove('active');
+        cur = Math.max(0, Math.min(n, slides.length - 1));
+        slides[cur].classList.add('active');
+        document.querySelectorAll('.nav-dot').forEach((d, i) => {
+            d.classList.toggle('active', i === cur);
+        });
+        const id = 'slide_' + String(cur + 1).padStart(2, '0');
+        slideIdEl.textContent = id;
+    }
+
+    function go(dir) { goTo(cur + dir); }
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') go(1);
+        if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp') go(-1);
+    });
+</script>
+</body>
+</html>
