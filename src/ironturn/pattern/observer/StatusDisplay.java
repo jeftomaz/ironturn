@@ -6,33 +6,24 @@ import ironturn.model.Hero;
 
 public class StatusDisplay implements BattleObserver {
 
-    private static final int BAR_SIZE = 10;
-
-    private String buildBar(Character c) {
-        int filled = (int) ((double) c.getHp() / c.getMaxHp() * BAR_SIZE);
-        int empty = BAR_SIZE - filled;
-        return String.format("%s: [%s%s] %d/%d HP",
-                c.getName(),
-                "█".repeat(filled),
-                "░".repeat(empty),
-                c.getHp(),
-                c.getMaxHp());
-    }
-
     @Override
     public void onEvent(BattleEvent event) {
-        Character hero  = event.getAttacker() instanceof Hero
-                ? event.getAttacker() : event.getTarget();
-        Character enemy = event.getAttacker() instanceof Hero
-                ? event.getTarget()   : event.getAttacker();
+        Character hero  = event.getAttacker() instanceof Hero ? event.getAttacker() : event.getTarget();
+        Character enemy = event.getAttacker() instanceof Hero ? event.getTarget()   : event.getAttacker();
+
+        int heroDmg  = event.getTarget() == hero  ? event.getHitTaken() : 0;
+        int enemyDmg = event.getTarget() == enemy ? event.getHitTaken() : 0;
 
         System.out.println();
-        System.out.printf("  ** %s ataca %s por %d de dano!%n",
-                event.getAttacker().getName(),
-                event.getTarget().getName(),
-                event.getHitTaken());
+        if (event.getType() == BattleEvent.Type.GUARD) {
+            System.out.printf("  ** %s levanta o escudo e causa %d de dano reflexivo!%n",
+                    event.getAttacker().getName(), event.getHitTaken());
+        } else {
+            System.out.printf("  ** %s ataca %s por %d de dano!%n",
+                    event.getAttacker().getName(), event.getTarget().getName(), event.getHitTaken());
+        }
         UI.separator();
-        System.out.println("  " + buildBar(hero));
-        System.out.println("  " + buildBar(enemy));
+        System.out.println("  " + UI.buildBar(hero,  heroDmg));
+        System.out.println("  " + UI.buildBar(enemy, enemyDmg));
     }
 }

@@ -34,6 +34,9 @@ public class DropTable {
                 break;
             }
         }
-        return List.of(shuffled.get(0), shuffled.get(1));
+        // Fallback
+        if (second == null) second = first;
+
+        return List.of(first, second);
     }
 }

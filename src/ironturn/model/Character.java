@@ -32,6 +32,10 @@ public abstract class Character {
         hp = Math.min(maxHp, hp + amount);
     }
 
+    public void setHp(int amount) {
+        this.hp = Math.max(0, Math.min(maxHp, amount));
+    }
+
     public void addAtk(int amount) { this.atk += amount; }
 
     public void addDef(int amount) { this.def += amount; }

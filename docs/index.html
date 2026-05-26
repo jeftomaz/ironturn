@@ -650,9 +650,8 @@ observers.<span class="fn">add</span>(<span class="kw">new</span> <span class="c
         </div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:0.6rem;margin-top:0.5rem">
             <p style="color:var(--muted);font-size:0.88rem;margin-bottom:0.3rem">Compilar e executar a partir da raiz do projeto:</p>
-            <div class="demo-cmd">$ find src -name "*.java" &gt; sources.txt</div>
-            <div class="demo-cmd">$ javac -d out @sources.txt</div>
-            <div class="demo-cmd">$ java -cp out ironturn.Main</div>
+            <div class="demo-cmd">javac -d out -sourcepath src src/ironturn/Main.java</div>
+            <div class="demo-cmd">java -cp out ironturn.Main</div>
         </div>
         <div class="demo-grid">
             <div class="demo-card">

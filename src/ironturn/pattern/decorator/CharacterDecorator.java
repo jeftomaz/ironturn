@@ -33,4 +33,6 @@ public abstract class CharacterDecorator extends Character {
     @Override
     public int attack(Character target) { return wrapped.attack(target); }
 
+    public Character getWrapped() { return wrapped; }
+
 }

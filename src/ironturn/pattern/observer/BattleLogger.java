@@ -13,7 +13,11 @@ public class BattleLogger implements BattleObserver {
 
     @Override
     public void onEvent(BattleEvent event) {
-        String msg = String.format("%s atacou %s por %d de dano",
+        String msg = event.getType() == BattleEvent.Type.GUARD
+                ? String.format("%s levantou o escudo — causou %d de dano e dobrou sua defesa",
+                event.getAttacker().getName(),
+                event.getHitTaken())
+                : String.format("%s atacou %s por %d de dano",
                 event.getAttacker().getName(),
                 event.getTarget().getName(),
                 event.getHitTaken());
