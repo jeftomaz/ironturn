@@ -2,7 +2,7 @@ package ironturn.model.item;
 import ironturn.model.Character;
 import ironturn.model.Hero;
 
-public class ScrollItem implements Item {
+public class HopeScroll implements Item {
 
     @Override public String getName() { return "Pergaminho Misterioso"; }
 

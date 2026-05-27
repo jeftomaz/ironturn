@@ -27,8 +27,8 @@ public class DropTable {
         List<Item> pool = new ArrayList<>(POOL);
 
         if (heroClass == HeroClass.WARRIOR) {
-            pool.add(new ScrollItem());
-            pool.add(new ScrollItem());   // peso 2, mesmo que PowerCrystal
+            pool.add(new HopeScroll());
+            pool.add(new HopeScroll());   // peso 2, mesmo que PowerCrystal
         }
 
         Collections.shuffle(pool);

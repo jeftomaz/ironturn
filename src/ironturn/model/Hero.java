@@ -1,5 +1,9 @@
 package ironturn.model;
+import ironturn.model.item.Item;
 import ironturn.pattern.strategy.AttackStrategy;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Hero extends Character{
 
@@ -7,6 +11,7 @@ public class Hero extends Character{
     private final HeroClass heroClass;
     private int undosRemaining;
     private int scrollCount = 0;
+    private final List<Item> inventory = new ArrayList<>();
 
     public Hero(String name, int hp, int hpMax, int atk, int def, AttackStrategy strategy, HeroClass heroClass) {
         super(name, hp, hpMax, atk, def);
@@ -37,4 +42,7 @@ public class Hero extends Character{
         heal(amount);
         return amount;
     }
+
+    public void addToInventory(Item item) { inventory.add(item); }
+    public List<Item> getInventory()      { return inventory; }
 }
