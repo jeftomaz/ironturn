@@ -83,13 +83,13 @@ public class BattleEngine {
 
     private List<Enemy> createEnemies() {
         List<Enemy> list = new ArrayList<>();
-        list.add(createEnemy("Goblin",          40, 12,  3));
-        list.add(createEnemy("Esqueleto",       58, 17,  5));
-        list.add(createEnemy("Lobisomen",       75, 22,  8));
-        list.add(createEnemy("Cavaleiro",       88, 25, 10));
-        list.add(createEnemy("Vampiro",        100, 28, 12));
-        list.add(createEnemy("Necromante",     115, 31, 14));
-        list.add(createEnemy("Rei Demônio",    145, 36, 16));
+        list.add(createEnemy("Goblin",          45, 15,  3));
+        list.add(createEnemy("Esqueleto",       62, 20,  5));
+        list.add(createEnemy("Lobisomen",       80, 26,  8));
+        list.add(createEnemy("Cavaleiro",       95, 30, 10));
+        list.add(createEnemy("Vampiro",        110, 34, 12));
+        list.add(createEnemy("Necromante",     125, 38, 14));
+        list.add(createEnemy("Rei Demônio",    145, 44, 16));
         return list;
     }
 
@@ -101,7 +101,7 @@ public class BattleEngine {
         while (c instanceof CharacterDecorator dec) {
             if      (c instanceof SwordDecorator)  System.out.println("    • Espada     +10 ATK");
             else if (c instanceof ShieldDecorator) System.out.println("    • Escudo      +8 DEF");
-            else if (c instanceof AmuletDecorator) System.out.println("    • Amuleto     +20 ATK  +30 HP máx");
+            else if (c instanceof AmuletDecorator) System.out.println("    • Amuleto     +15 ATK  +30 HP máx");
             c = dec.getWrapped();
         }
     }
@@ -117,6 +117,8 @@ public class BattleEngine {
         System.out.println();
         if (hero.getHeroClass() == HeroClass.MAGE)
             System.out.println("  ✦ Feitiços de reversão: " + hero.getContraAvailable());
+        if (hero.getHeroClass() == HeroClass.WARRIOR && hero.hasScroll())
+            System.out.println("  ✦ Pergaminhos: " + hero.getScrollCount());
     }
 
     // Menu dinâmico
@@ -134,6 +136,18 @@ public class BattleEngine {
             menu.add(new MenuEntry("Defender (levantar escudo)", () -> {
                 activeGuard = new GuardCommand(equipped, currentEnemy, observers);
                 activeGuard.execute();
+            }, true));
+        }
+
+        double hpPct = (double) equipped.getHp() / equipped.getMaxHp();
+        if (hero.getHeroClass() == HeroClass.WARRIOR
+                && hero.hasScroll()
+                && hpPct <= 0.30) {
+            menu.add(new MenuEntry("Usar Pergaminho Misterioso", () -> {
+                System.out.println("\n  ✦ Uma voz distante ecoa entre as sombras...");
+                UI.pause(1500);
+                int healed = hero.useScroll();
+                System.out.printf("  ✦ Uma luz quente restaura suas forças. (+%d HP)%n", healed);
             }, true));
         }
 
@@ -231,7 +245,7 @@ public class BattleEngine {
         System.out.println("       Habilidade: crítico e penetração de armadura");
         System.out.println();
         System.out.println("  [2]  ≈ Mago ≈      -- HP 80  | ATK 15 | DEF 5");
-        System.out.println("       Amuleto (+20 ATK, +30 HP máx)");
+        System.out.println("       Amuleto (+15 ATK, +30 HP máx)");
         System.out.println("       Habilidade: reverter 1 turno por inimigo");
         System.out.println();
         System.out.print("  > ");
@@ -282,7 +296,7 @@ public class BattleEngine {
             if (!currentEnemy.isAlive()) {
                 UI.enemyDefeated(currentEnemy.getName());
 
-                List<Item> drops = DropTable.roll();
+                List<Item> drops = DropTable.roll(hero.getHeroClass());
                 Item chosen = showDropMenu(drops);
                 chosen.apply(hero);
                 System.out.println();

@@ -1,5 +1,6 @@
 package ironturn.battle;
 
+import ironturn.model.HeroClass;
 import ironturn.model.item.*;
 
 import java.util.*;
@@ -22,21 +23,21 @@ public class DropTable {
         POOL = Collections.unmodifiableList(pool);
     }
 
-    public static List<Item> roll () {
-        List<Item> shuffled = new ArrayList<>(POOL);
-        Collections.shuffle(shuffled);
+    public static List<Item> roll(HeroClass heroClass) {
+        List<Item> pool = new ArrayList<>(POOL);
 
-        Item first = shuffled.get(0);
-        Item second = null;
-        for (Item item : shuffled) {
-            if (item.getClass() != first.getClass()) {
-                second = item;
-                break;
-            }
+        if (heroClass == HeroClass.WARRIOR) {
+            pool.add(new ScrollItem());
+            pool.add(new ScrollItem());   // peso 2, mesmo que PowerCrystal
         }
-        // Fallback
-        if (second == null) second = first;
 
+        Collections.shuffle(pool);
+        Item first = pool.get(0);
+        Item second = null;
+        for (Item item : pool) {
+            if (item.getClass() != first.getClass()) { second = item; break; }
+        }
+        if (second == null) second = first;
         return List.of(first, second);
     }
 }
