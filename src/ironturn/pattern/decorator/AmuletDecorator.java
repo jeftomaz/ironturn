@@ -7,7 +7,7 @@ public class AmuletDecorator extends CharacterDecorator {
     public AmuletDecorator(Character wrapped) {
         super(wrapped);
         wrapped.addMaxHp(30);
-        wrapped.addAtk(5);
+        wrapped.addAtk(20);
     }
 
     // @Override

@@ -33,6 +33,21 @@ public abstract class CharacterDecorator extends Character {
     @Override
     public int attack(Character target) { return wrapped.attack(target); }
 
+    @Override
+    public void heal(int amount)       { wrapped.heal(amount); }
+
+    @Override
+    public void setHp(int amount)      { wrapped.setHp(amount); }
+
+    @Override
+    public void addDef(int amount)     { wrapped.addDef(amount); }
+
+    @Override
+    public void addAtk(int amount)     { wrapped.addAtk(amount); }
+
+    @Override
+    public void addMaxHp(int amount)   { wrapped.addMaxHp(amount); }
+
     public Character getWrapped() { return wrapped; }
 
 }

@@ -86,8 +86,11 @@ public class UI {
     }
 
     public static void pause(int ms) {
-        try { Thread.sleep(ms); }
-        catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+        try {
+            Thread.sleep(ms);
+            int avail = System.in.available();
+            if (avail > 0) System.in.read(new byte[avail]);
+        } catch (Exception ignored) {}
     }
 
     public static String buildBar(Character c, int damage) {

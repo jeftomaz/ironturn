@@ -16,6 +16,7 @@ public class Enemy extends Character{
     public int attack(Character target) {
         int min = (int)(getAtk() * (1 - ATTACK_VARIANCE));
         int max = (int)(getAtk() * (1 + ATTACK_VARIANCE));
-        return random.nextInt(min, max + 1);
+        int raw = random.nextInt(min, max + 1);
+        return Math.max(0, raw - target.getDef());
     }
 }

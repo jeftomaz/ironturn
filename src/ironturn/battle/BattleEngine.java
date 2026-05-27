@@ -63,7 +63,7 @@ public class BattleEngine {
                 equipped = new ShieldDecorator(new SwordDecorator(h));
             }
             case 2 -> {
-                h = new Hero(name, 80, 80, 30, 5, new MageAttack(), HeroClass.MAGE);
+                h = new Hero(name, 80, 80, 15, 5, new MageAttack(), HeroClass.MAGE);
                 equipped = new AmuletDecorator(h);
                 h.setHp(equipped.getMaxHp());
             }
@@ -83,9 +83,13 @@ public class BattleEngine {
 
     private List<Enemy> createEnemies() {
         List<Enemy> list = new ArrayList<>();
-        list.add(createEnemy("Goblin",    40,  12,  3));
-        list.add(createEnemy("Lobisomen", 75,  22,  8));
-        list.add(createEnemy("Vampiro",   100, 28, 12));
+        list.add(createEnemy("Goblin",          40, 12,  3));
+        list.add(createEnemy("Esqueleto",       58, 17,  5));
+        list.add(createEnemy("Lobisomen",       75, 22,  8));
+        list.add(createEnemy("Cavaleiro",       88, 25, 10));
+        list.add(createEnemy("Vampiro",        100, 28, 12));
+        list.add(createEnemy("Necromante",     115, 31, 14));
+        list.add(createEnemy("Rei Demônio",    145, 36, 16));
         return list;
     }
 
@@ -97,7 +101,7 @@ public class BattleEngine {
         while (c instanceof CharacterDecorator dec) {
             if      (c instanceof SwordDecorator)  System.out.println("    • Espada     +10 ATK");
             else if (c instanceof ShieldDecorator) System.out.println("    • Escudo      +8 DEF");
-            else if (c instanceof AmuletDecorator) System.out.println("    • Amuleto     +5 ATK  +30 HP máx");
+            else if (c instanceof AmuletDecorator) System.out.println("    • Amuleto     +20 ATK  +30 HP máx");
             c = dec.getWrapped();
         }
     }
@@ -222,12 +226,12 @@ public class BattleEngine {
 
         UI.section("ESCOLHA SUA CLASSE");
         System.out.println();
-        System.out.println("  [1] [G] Guerreiro  -- HP 120 | ATK 20 | DEF 15");
+        System.out.println("  [1]  ∆ Guerreiro ∆ -- HP 120 | ATK 20 | DEF 15");
         System.out.println("       Espada (+10 ATK) e Escudo (+8 DEF)");
         System.out.println("       Habilidade: crítico e penetração de armadura");
         System.out.println();
-        System.out.println("  [2] [M] Mago       -- HP 80  | ATK 30 | DEF 5");
-        System.out.println("       Amuleto (+5 ATK, +30 HP máx)");
+        System.out.println("  [2]  ≈ Mago ≈      -- HP 80  | ATK 15 | DEF 5");
+        System.out.println("       Amuleto (+20 ATK, +30 HP máx)");
         System.out.println("       Habilidade: reverter 1 turno por inimigo");
         System.out.println();
         System.out.print("  > ");
