@@ -8,8 +8,6 @@ RPG por turnos via console, desenvolvido em Java puro, sem frameworks externos.
 
 ```bash
 # A partir da raiz do projeto
-find src -name "*.java" > sources.txt
-javac -d out @sources.txt
 java -cp out ironturn.Main
 ```
 

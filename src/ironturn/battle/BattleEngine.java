@@ -1,9 +1,7 @@
 package ironturn.battle;
 
+import ironturn.model.*;
 import ironturn.model.Character;
-import ironturn.model.Enemy;
-import ironturn.model.Hero;
-import ironturn.model.HeroClass;
 import ironturn.model.item.HopeScroll;
 import ironturn.model.item.Item;
 import ironturn.pattern.command.AttackCommand;
@@ -16,6 +14,7 @@ import ironturn.pattern.decorator.SwordDecorator;
 import ironturn.pattern.observer.BattleLogger;
 import ironturn.pattern.observer.BattleObserver;
 import ironturn.pattern.observer.StatusDisplay;
+import ironturn.pattern.strategy.AttackStrategy;
 import ironturn.pattern.strategy.MageAttack;
 import ironturn.pattern.strategy.WarriorAttack;
 
@@ -40,7 +39,11 @@ public class BattleEngine {
     private int heroHpSnapshot;
     private boolean enemyHasAttacked;
     private GuardCommand activeGuard;
+    private boolean playAsEnemy = false;
+    private HeroSnapshot heroBossSnapshot = null;
+    private HeroSnapshot heroSnapshot = null;
 
+    // Construtor do modo Herói
     public BattleEngine(Scanner scanner) {
         this.history = new CommandHistory();
         this.observers = new ArrayList<>();
@@ -49,7 +52,21 @@ public class BattleEngine {
         this.activeGuard = null;
     }
 
+    // Construtor do modo Inimigo
+    public BattleEngine(Scanner scanner, HeroSnapshot heroBossSnapshot) {
+        this(scanner);
+        this.playAsEnemy      = true;
+        this.heroBossSnapshot = heroBossSnapshot;
+    }
+
     // Setup helpers
+
+    public HeroClass getHeroClass() {
+        return hero.getHeroClass();
+    }
+    public HeroSnapshot getHeroSnapshot() {
+        return heroSnapshot;
+    }
 
     private int vary(int base) {
         double factor = 0.85 + new Random().nextDouble() * 0.30;
@@ -74,6 +91,12 @@ public class BattleEngine {
                 equipped = new ShieldDecorator(new SwordDecorator(h));
             }
         }
+        heroSnapshot = new HeroSnapshot(
+                h.getName(),
+                equipped.getMaxHp(),
+                equipped.getAtk(),
+                equipped.getDef()
+        );
         return h;
     }
 
@@ -92,6 +115,87 @@ public class BattleEngine {
         list.add(createEnemy("Necromante",     125, 38, 14,true));
         list.add(createEnemy("Rei Demônio",    145, 44, 16, true));
         return list;
+    }
+
+    private void setupEnemyMode() {
+        UI.section("MODO INIMIGO");
+        System.out.println();
+        System.out.println("  Escolha seu personagem:");
+        System.out.println();
+
+        String[][] roster = {
+                {"Goblin",       "45",  "15",  "3",  "warrior"},
+                {"Esqueleto",    "62",  "20",  "5",  "warrior"},
+                {"Cavaleiro",    "80",  "26",  "8",  "warrior"},
+                {"Lobisomem",    "95",  "30", "10",  "warrior"},
+                {"Vampiro",     "110",  "34", "12",  "mage"   },
+                {"Necromante",  "125",  "38", "14",  "mage"   },
+                {"Rei Demônio", "145",  "44", "16",  "warrior"},
+        };
+
+        for (int i = 0; i < roster.length; i++)
+            System.out.printf("  [%d]  %-14s  HP: %s | ATK: %s | DEF: %s%n",
+                    i + 1, roster[i][0], roster[i][1], roster[i][2], roster[i][3]);
+
+        System.out.println();
+        System.out.print("  > ");
+        int pick = Integer.parseInt(scanner.nextLine()) - 1;
+        String[] chosen = roster[pick];
+
+        AttackStrategy strategy = chosen[4].equals("mage")
+                ? new MageAttack() : new WarriorAttack();
+
+        int hp = Integer.parseInt(chosen[1]);
+        hero     = new Hero(chosen[0], hp, hp,
+                Integer.parseInt(chosen[2]),
+                Integer.parseInt(chosen[3]),
+                strategy, HeroClass.WARRIOR);
+        equipped = hero;   // sem decorators
+
+        enemies          = buildTieredEnemies(pick, roster);
+        currentEnemy     = enemies.get(0);
+        heroHpSnapshot   = hero.getHp();
+        enemyHasAttacked = false;
+
+        observers.add(new BattleLogger());
+        observers.add(new StatusDisplay());
+
+        System.out.println();
+        System.out.printf("  Você é o %s. Prepare-se.%n", hero.getName());
+        System.out.printf("  Primeiro inimigo: %s%n", currentEnemy.getName());
+        UI.separator();
+    }
+
+    private List<Enemy> buildTieredEnemies(int chosenIndex, String[][] roster) {
+        Random rng = new Random();
+        int[][] tiers = {{0, 1}, {2, 3}, {4, 5}};  // índice 6 (Rei Demônio) excluído
+        List<Enemy> list = new ArrayList<>();
+
+        for (int[] tier : tiers) {
+            List<Integer> options = new ArrayList<>();
+            for (int idx : tier)
+                if (idx != chosenIndex) options.add(idx);
+            int idx = options.get(rng.nextInt(options.size()));
+            String[] e = roster[idx];
+            list.add(createEnemy(e[0],
+                    Integer.parseInt(e[1]),
+                    Integer.parseInt(e[2]),
+                    Integer.parseInt(e[3]), false));
+        }
+
+        list.add(createHeroBoss());
+        return list;
+    }
+
+    private Enemy createHeroBoss() {
+        return new Enemy(
+                heroBossSnapshot.name(),
+                heroBossSnapshot.maxHp(),
+                heroBossSnapshot.maxHp(),
+                heroBossSnapshot.atk(),
+                heroBossSnapshot.def(),
+                false
+        );
     }
 
     // UI helpers
@@ -257,6 +361,7 @@ public class BattleEngine {
     // Game flow
 
     private void setup() {
+        if (playAsEnemy) { setupEnemyMode(); return; }
 
         System.out.println("  Digite o nome do seu personagem:");
         System.out.print("  > ");
@@ -268,14 +373,14 @@ public class BattleEngine {
         System.out.println("       Espada (+10 ATK) e Escudo (+8 DEF)");
         System.out.println("       Habilidade: crítico e penetração de armadura");
         System.out.println();
-        System.out.println("  [2]  ≈ Mago ≈      -- HP 80  | ATK 15 | DEF 5");
+        System.out.println("  [2]  ≈ Mago ≈ -- HP 80 | ATK 15 | DEF 5");
         System.out.println("       Amuleto (+15 ATK, +30 HP máx)");
         System.out.println("       Habilidade: reverter 1 turno por inimigo");
         System.out.println();
         System.out.print("  > ");
         int choice = Integer.parseInt(scanner.nextLine());
 
-        hero = createHero(name, choice);
+        hero             = createHero(name, choice);
         this.enemies     = createEnemies();
         currentEnemy     = enemies.get(0);
         heroHpSnapshot   = hero.getHp();
@@ -327,18 +432,18 @@ public class BattleEngine {
 
                 enemies.remove(currentEnemy);
                 if (!enemies.isEmpty()) {
-                    List<Item> drops = DropTable.roll(hero.getHeroClass());
-                    Item chosen = showDropMenu(drops);
-                    chosen.apply(hero);
-                    if (!(chosen instanceof HopeScroll)) hero.addToInventory(chosen);
-                    System.out.println();
-                    System.out.println(UI.GREEN + " Você obteve: " + chosen.getName() + "!" + UI.RESET);
-                    UI.separator();
-
-                    currentEnemy     = enemies.get(0);
-                    heroHpSnapshot   = hero.getHp();
+                    if (!playAsEnemy) {
+                        List<Item> drops = DropTable.roll(hero.getHeroClass());
+                        Item chosen = showDropMenu(drops);
+                        chosen.apply(hero);
+                        if (!(chosen instanceof HopeScroll)) hero.addToInventory(chosen);
+                        System.out.println(UI.GREEN + " Você obteve: " + chosen.getName() + "!" + UI.RESET);
+                        UI.separator();
+                    }
+                    currentEnemy = enemies.get(0);
+                    heroHpSnapshot = hero.getHp();
                     enemyHasAttacked = false;
-                    activeGuard      = null;
+                    activeGuard = null;
                     hero.resetContra();
                     UI.separator();
                     System.out.println("  [!] Um novo inimigo surge das sombras: " + currentEnemy.getName() + "!");
@@ -359,7 +464,7 @@ public class BattleEngine {
         }
     }
 
-    private void ending() {
+    private boolean ending() {
         UI.blank();
         if (hero.isAlive()) {
             UI.section("  ═══  VITÓRIA  ═══");
@@ -375,11 +480,12 @@ public class BattleEngine {
             System.out.printf("  %s tombou, mas a luta não termina aqui.%n", hero.getName());
         }
         UI.blank();
+        return hero.isAlive();
     }
 
-    public void start() {
+    public boolean start() {
         setup();
         loop();
-        ending();
+        return ending();
     }
 }
