@@ -41,11 +41,11 @@ public class BattleEngine {
     private boolean enemyHasAttacked;
     private GuardCommand activeGuard;
 
-    public BattleEngine() {
-        this.history     = new CommandHistory();
-        this.observers   = new ArrayList<>();
-        this.scanner     = new Scanner(System.in);
-        this.enemies     = new ArrayList<>();
+    public BattleEngine(Scanner scanner) {
+        this.history = new CommandHistory();
+        this.observers = new ArrayList<>();
+        this.scanner = scanner;
+        this.enemies = new ArrayList<>();
         this.activeGuard = null;
     }
 
@@ -195,8 +195,9 @@ public class BattleEngine {
         UI.pause(2000);
 
         while (!actionTaken) {
+            String title = ">> SEU TURNO :: " + hero.getName() + " vs " + currentEnemy.getName();
+            UI.frameOpen(UI.BLUE, title);
             try {
-                UI.section(">> SEU TURNO :: " + hero.getName() + " vs " + currentEnemy.getName());
                 System.out.println();
                 System.out.println("  " + buildBar(equipped));
                 System.out.println("  " + buildBar(currentEnemy));
@@ -211,25 +212,29 @@ public class BattleEngine {
                 System.out.print("  > ");
 
                 int choice = Integer.parseInt(scanner.nextLine()) - 1;
+                UI.markNewLine(); // ← sincroniza o estado do decorator após o Enter do usuário
+
                 if (choice < 0 || choice >= menu.size()) {
                     System.out.println("  Comando inválido. Tente novamente.");
+                    UI.frameClose(UI.BLUE);
                     continue;
                 }
 
                 MenuEntry entry = menu.get(choice);
-                entry.action().run();
+                entry.action().run();      // resultado do ataque sai enquadrado automaticamente
+                UI.frameClose(UI.BLUE);
                 if (entry.takesTurn()) actionTaken = true;
 
             } catch (NumberFormatException e) {
                 System.out.println("  Digite um número válido.");
+                UI.frameClose(UI.BLUE);
             }
         }
     }
 
     private void enemyTurn() {
         UI.pause(1000);
-        UI.sectionEnemy("<<  TURNO DO INIMIGO  —  " + currentEnemy.getName());
-
+        UI.frameOpen(UI.RED, "<<  TURNO DO INIMIGO  —  " + currentEnemy.getName());
         System.out.println();
 
         if (currentEnemy.canUseSpecial()) {
@@ -245,12 +250,13 @@ public class BattleEngine {
             history.push(cmd);
             enemyHasAttacked = true;
         }
+
+        UI.frameClose(UI.RED);
     }
 
     // Game flow
 
     private void setup() {
-        UI.titleScreen();
 
         System.out.println("  Digite o nome do seu personagem:");
         System.out.print("  > ");
@@ -314,7 +320,7 @@ public class BattleEngine {
             if (!currentEnemy.isAlive()) {
                 UI.enemyDefeated(currentEnemy.getName());
 
-                if (activeGuard != null) {
+                if (activeGuard != null) {   // ← FIX: revert antes do continue
                     activeGuard.revert();
                     activeGuard = null;
                 }
@@ -369,7 +375,6 @@ public class BattleEngine {
             System.out.printf("  %s tombou, mas a luta não termina aqui.%n", hero.getName());
         }
         UI.blank();
-        scanner.close();
     }
 
     public void start() {
