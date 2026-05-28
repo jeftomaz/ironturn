@@ -5,323 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IronTurn — Padrões de Projeto</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Fira+Code:wght@300;400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        :root {
-            --bg: #0d1117;
-            --surface: #161b22;
-            --surface2: #1e2530;
-            --border: #30363d;
-            --gold: #d4a017;
-            --gold-glow: rgba(212,160,23,0.15);
-            --teal: #58c4dc;
-            --blue: #79c0ff;
-            --green: #7ee787;
-            --orange: #ffa657;
-            --red: #f85149;
-            --purple: #d2a8ff;
-            --text: #e6edf3;
-            --muted: #8b949e;
-            --dim: #484f58;
-        }
-
-        html, body { height: 100%; }
-
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: 'Inter', sans-serif;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        /* ── Scan-line overlay ── */
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background: repeating-linear-gradient(
-                    0deg, transparent, transparent 3px,
-                    rgba(0,0,0,0.025) 3px, rgba(0,0,0,0.025) 4px
-            );
-            pointer-events: none;
-            z-index: 200;
-        }
-
-        /* ── Slide engine ── */
-        .slideshow { width: 100vw; height: 100vh; position: relative; }
-
-        .slide {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            padding: 2.5rem 5rem 5rem;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            pointer-events: none;
-        }
-        .slide.active { opacity: 1; pointer-events: all; }
-
-        /* ── Corner decorations ── */
-        .deco {
-            position: fixed;
-            font-family: 'Fira Code', monospace;
-            font-size: 0.65rem;
-            color: var(--dim);
-            z-index: 100;
-            letter-spacing: 0.05em;
-        }
-        .deco-tl { top: 1.4rem; left: 2.5rem; }
-        .deco-tr { top: 1.4rem; right: 2.5rem; text-align: right; }
-        .deco-bl { bottom: 1.8rem; left: 2.5rem; }
-
-        /* ── Navigation ── */
-        .nav {
-            position: fixed;
-            bottom: 1.6rem;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            align-items: center;
-            gap: 1.25rem;
-            z-index: 100;
-        }
-        .nav-btn {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            color: var(--muted);
-            width: 32px; height: 32px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 0.9rem;
-            display: flex; align-items: center; justify-content: center;
-            transition: all 0.2s;
-            font-family: inherit;
-        }
-        .nav-btn:hover { color: var(--text); border-color: var(--gold); }
-        .nav-dots { display: flex; gap: 5px; align-items: center; }
-        .nav-dot {
-            width: 5px; height: 5px;
-            border-radius: 50%;
-            background: var(--dim);
-            cursor: pointer;
-            transition: all 0.25s;
-        }
-        .nav-dot.active { background: var(--gold); width: 16px; border-radius: 3px; }
-
-        /* ── Slide header ── */
-        .slide-header {
-            display: flex;
-            align-items: center;
-            gap: 0.9rem;
-            padding-bottom: 1.25rem;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 1.75rem;
-            flex-shrink: 0;
-        }
-        .slide-h2 {
-            font-family: 'Cinzel', serif;
-            font-size: 1.65rem;
-            font-weight: 600;
-            color: var(--text);
-        }
-
-        /* ── Pattern tags ── */
-        .ptag {
-            font-family: 'Fira Code', monospace;
-            font-size: 0.72rem;
-            padding: 3px 10px;
-            border-radius: 4px;
-            border: 1px solid;
-            flex-shrink: 0;
-        }
-        .pt-s  { color: var(--teal);   border-color: var(--teal);   }
-        .pt-d  { color: var(--orange); border-color: var(--orange); }
-        .pt-c  { color: var(--blue);   border-color: var(--blue);   }
-        .pt-o  { color: var(--green);  border-color: var(--green);  }
-
-        /* ── Problem / solution boxes ── */
-        .prob-box, .sol-box {
-            border-radius: 7px;
-            padding: 0.65rem 1rem;
-            margin-bottom: 0.9rem;
-        }
-        .prob-box { background: rgba(248,81,73,0.07);  border: 1px solid rgba(248,81,73,0.22); }
-        .sol-box  { background: rgba(126,231,135,0.05); border: 1px solid rgba(126,231,135,0.18); }
-        .box-lbl {
-            font-size: 0.62rem;
-            font-weight: 600;
-            letter-spacing: 0.15em;
-            text-transform: uppercase;
-            margin-bottom: 0.35rem;
-        }
-        .box-lbl.d { color: var(--red); }
-        .box-lbl.s { color: var(--green); }
-        .box-txt { font-size: 0.875rem; color: var(--muted); line-height: 1.65; }
-        .box-txt code { font-family: 'Fira Code', monospace; font-size: 0.82rem; color: var(--text); }
-
-        /* ── Feature list ── */
-        .flist { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.75rem; }
-        .flist li {
-            display: flex; align-items: flex-start; gap: 0.7rem;
-            font-size: 0.875rem; color: var(--muted); line-height: 1.55;
-        }
-        .flist li::before { content: '▸'; color: var(--gold); flex-shrink: 0; margin-top: 1px; }
-        .flist li code { font-family: 'Fira Code', monospace; font-size: 0.8rem; }
-
-        /* ── Code block ── */
-        .code-block {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 1.1rem 1.4rem;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        .code-title {
-            font-family: 'Fira Code', monospace;
-            font-size: 0.65rem;
-            color: var(--dim);
-            padding-bottom: 0.75rem;
-            margin-bottom: 0.75rem;
-            border-bottom: 1px solid var(--border);
-            flex-shrink: 0;
-            letter-spacing: 0.04em;
-        }
-        pre {
-            font-family: 'Fira Code', monospace;
-            font-size: 0.78rem;
-            line-height: 1.75;
-            flex: 1;
-            overflow: hidden;
-        }
-
-        /* ── Syntax colours ── */
-        .kw  { color: var(--teal); }
-        .tp  { color: var(--blue); }
-        .fn  { color: var(--purple); }
-        .str { color: var(--orange); }
-        .cmt { color: var(--dim); font-style: italic; }
-        .num { color: var(--green); }
-        .cls { color: #ffa657; }
-
-        /* ── Split layout ── */
-        .split {
-            display: grid;
-            grid-template-columns: 1fr 1.15fr;
-            gap: 2rem;
-            flex: 1;
-            min-height: 0;
-        }
-        .split-left { display: flex; flex-direction: column; justify-content: center; gap: 0; }
-
-        /* ────────────────────────────────────
-           SLIDE 1 — TITLE
-        ───────────────────────────────────── */
-        #s1 {
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            gap: 0;
-            padding: 0;
-        }
-        .game-title {
-            font-family: 'Cinzel', serif;
-            font-size: 6.5rem;
-            font-weight: 700;
-            color: var(--gold);
-            letter-spacing: 0.08em;
-            line-height: 1;
-            text-shadow: 0 0 60px rgba(212,160,23,0.25);
-        }
-        .game-sub {
-            font-size: 1rem;
-            color: var(--muted);
-            letter-spacing: 0.25em;
-            text-transform: uppercase;
-            font-weight: 300;
-            margin-top: 1rem;
-        }
-        .tag-row { display: flex; gap: 0.7rem; justify-content: center; flex-wrap: wrap; margin-top: 2rem; }
-        .hint {
-            font-family: 'Fira Code', monospace;
-            font-size: 0.72rem;
-            color: var(--dim);
-            margin-top: 3rem;
-            letter-spacing: 0.05em;
-        }
-
-        /* ────────────────────────────────────
-           SLIDE 2 — OVERVIEW
-        ───────────────────────────────────── */
-        .pat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
-        .pat-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 9px;
-            padding: 1rem 1.1rem;
-            transition: border-color 0.2s;
-        }
-        .pat-card:hover { border-color: var(--gold); }
-        .pat-card-top { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem; }
-        .pat-card-name { font-family: 'Cinzel', serif; font-size: 0.95rem; font-weight: 600; }
-        .pat-card-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.55; }
-
-        /* ────────────────────────────────────
-           SLIDE 7 — ARCHITECTURE
-        ───────────────────────────────────── */
-        .arch-box {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 1.5rem 2rem;
-            font-family: 'Fira Code', monospace;
-            font-size: 0.82rem;
-            line-height: 2;
-            white-space: pre;
-            color: var(--muted);
-        }
-
-        /* ────────────────────────────────────
-           SLIDE 8 — DEMO
-        ───────────────────────────────────── */
-        .demo-cmd {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 7px;
-            padding: 0.65rem 1.2rem;
-            font-family: 'Fira Code', monospace;
-            font-size: 0.88rem;
-            color: var(--green);
-            width: 100%;
-            max-width: 560px;
-        }
-        .demo-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 0.85rem;
-            margin-top: 1.75rem;
-            max-width: 860px;
-            width: 100%;
-        }
-        .demo-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 0.9rem 1rem;
-            text-align: center;
-        }
-        .demo-card-lbl {
-            font-family: 'Fira Code', monospace;
-            font-size: 0.68rem;
-            margin-bottom: 0.45rem;
-        }
-        .demo-card-txt { font-size: 0.78rem; color: var(--muted); line-height: 1.55; }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
@@ -402,12 +86,13 @@
     </div>
 
     <!-- ══════════════════════════════════
-         SLIDE 3 — STRATEGY
+         SLIDE 3 — STRATEGY: CONCEITO
     ═══════════════════════════════════ -->
     <div class="slide" id="s3">
         <div class="slide-header">
             <span class="ptag pt-s">Strategy</span>
             <h2 class="slide-h2">Comportamento de Ataque</h2>
+            <span class="part-tag">1 · 2</span>
         </div>
         <div class="split">
             <div class="split-left">
@@ -417,30 +102,84 @@
                 </div>
                 <div class="sol-box">
                     <div class="box-lbl s">Com Strategy</div>
-                    <p class="box-txt">O <code>Hero</code> recebe uma <code>AttackStrategy</code> na criação. Trocar o comportamento é trocar o objeto — o <code>BattleEngine</code> não sabe qual estratégia está ativa.</p>
+                    <p class="box-txt">O <code>Hero</code> recebe uma <code>AttackStrategy</code> na criação. Trocar o comportamento é trocar o objeto — o <code>BattleEngine</code> nunca sabe qual estratégia está ativa.</p>
                 </div>
                 <ul class="flist" style="margin-top:1rem">
-                    <li><code style="color:var(--teal)">WarriorAttack</code> — dano físico com 5% de crítico; usa constantes nomeadas</li>
-                    <li><code style="color:var(--teal)">MageAttack</code> — uma linha: <code>return attacker.getAtk()</code>; ignora o target</li>
-                    <li>A interface recebe os <code>Character</code> completos — a strategy acessa qualquer atributo</li>
+                    <li>A interface recebe <code>Character</code> completos — a strategy acessa qualquer atributo</li>
+                    <li><code style="color:var(--teal)">WarriorAttack</code> — 2 chances independentes: crítico (7%) e penetração (10%)</li>
+                    <li><code style="color:var(--teal)">MageAttack</code> — uma linha: ignora o parâmetro <code>target</code> completamente</li>
                 </ul>
             </div>
             <div class="code-block">
-                <div class="code-title">AttackStrategy.java · WarriorAttack.java · MageAttack.java</div>
-                <pre><span class="kw">public interface</span> <span class="cls">AttackStrategy</span> {
-    <span class="cmt">// Recebe objetos completos — não só primitivos</span>
+                <div class="code-title">Hierarquia Strategy no IronTurn</div>
+                <pre><span class="cmt">// Interface — contrato único entre Hero e qualquer ataque</span>
+<span class="kw">public interface</span> <span class="cls">AttackStrategy</span> {
     <span class="tp">int</span> <span class="fn">execute</span>(<span class="cls">Character</span> attacker, <span class="cls">Character</span> target);
 }
 
-<span class="kw">public class</span> <span class="cls">WarriorAttack</span> <span class="kw">implements</span> <span class="cls">AttackStrategy</span> {
-    <span class="kw">private static final double</span> CRIT_CHANCE      = <span class="num">0.05</span>;
-    <span class="kw">private static final double</span> CRIT_MULTIPLIER  = <span class="num">2.0</span>;
+<span class="cmt">AttackStrategy (interface)</span>
+<span class="cmt">│  + execute(attacker, target) : int</span>
+<span class="cmt">│</span>
+<span class="cmt">├── WarriorAttack</span>
+<span class="cmt">│     CRIT_CHANCE   = 7%   — dano × 2.0</span>
+<span class="cmt">│     PIERCE_CHANCE = 10%  — ignora DEF</span>
+<span class="cmt">│</span>
+<span class="cmt">└── MageAttack</span>
+<span class="cmt">      dano = atk — sempre ignora DEF</span>
 
+
+<span class="cmt">// Hero delega sem saber qual strategy está ativa:</span>
+<span class="kw">@Override</span>
+<span class="kw">public</span> <span class="tp">int</span> <span class="fn">attack</span>(<span class="cls">Character</span> target) {
+    <span class="kw">return</span> strategy.<span class="fn">execute</span>(<span class="kw">this</span>, target); <span class="cmt">// polimorfismo puro</span>
+}</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         SLIDE 4 — STRATEGY: IMPLEMENTAÇÃO
+    ═══════════════════════════════════ -->
+    <div class="slide" id="s4">
+        <div class="slide-header">
+            <span class="ptag pt-s">Strategy</span>
+            <h2 class="slide-h2">Comportamento de Ataque</h2>
+            <span class="part-tag">2 · 2</span>
+        </div>
+        <div class="split">
+            <div class="split-left">
+                <ul class="flist">
+                    <li><code>PIERCE_CHANCE</code> e <code>CRIT_CHANCE</code> são constantes nomeadas — sem números mágicos no código</li>
+                    <li>A verificação de penetração ocorre <em>antes</em> do crítico — as duas chances são independentes e cumulativas</li>
+                    <li><code>MageAttack</code> ignora o parâmetro <code>target</code>; o <code>BattleEngine</code> não sabe disso — nem precisa</li>
+                    <li>Adicionar uma nova classe (Arqueiro, Druida…) é só criar uma nova <code>AttackStrategy</code> — zero alteração no engine</li>
+                </ul>
+                <div class="sol-box" style="margin-top:1rem">
+                    <div class="box-lbl s">Injeção em BattleEngine.createHero()</div>
+                    <p class="box-txt">
+                        <code>new Hero(name, 120, 120, 20, 15, <span style="color:var(--teal)">new WarriorAttack()</span>, ...)</code><br>
+                        <code>new Hero(name,  80,  80, 30,  5, <span style="color:var(--teal)">new MageAttack()</span>,   ...)</code>
+                    </p>
+                </div>
+            </div>
+            <div class="code-block">
+                <div class="code-title">WarriorAttack.java · MageAttack.java</div>
+                <pre><span class="kw">public class</span> <span class="cls">WarriorAttack</span> <span class="kw">implements</span> <span class="cls">AttackStrategy</span> {
+    <span class="kw">private static final double</span> CRIT_CHANCE    = <span class="num">0.07</span>; <span class="cmt">// 7%</span>
+    <span class="kw">private static final double</span> PIERCE_CHANCE  = <span class="num">0.10</span>; <span class="cmt">// 10%</span>
+    <span class="kw">private static final double</span> CRIT_MULTIPLIER = <span class="num">2.0</span>;
+
+    <span class="kw">@Override</span>
     <span class="kw">public</span> <span class="tp">int</span> <span class="fn">execute</span>(<span class="cls">Character</span> attacker, <span class="cls">Character</span> target) {
-        <span class="tp">int</span> base = attacker.<span class="fn">getAtk</span>() - target.<span class="fn">getDef</span>();
-        <span class="kw">if</span> (random.<span class="fn">nextDouble</span>() &lt; CRIT_CHANCE)
+        <span class="tp">int</span> base = (random.<span class="fn">nextDouble</span>() &lt; PIERCE_CHANCE)
+                ? attacker.<span class="fn">getAtk</span>()                     <span class="cmt">// ignora DEF</span>
+                : Math.<span class="fn">max</span>(<span class="num">0</span>, attacker.<span class="fn">getAtk</span>() - target.<span class="fn">getDef</span>());
+
+        <span class="kw">if</span> (random.<span class="fn">nextDouble</span>() &lt; CRIT_CHANCE) {
+            System.out.<span class="fn">println</span>(<span class="str">"  ⚔  GOLPE CRÍTICO!"</span>);
             <span class="kw">return</span> (<span class="tp">int</span>)(base * CRIT_MULTIPLIER);
-        <span class="kw">return</span> Math.<span class="fn">max</span>(<span class="num">0</span>, base);
+        }
+        <span class="kw">return</span> base;
     }
 }
 
@@ -454,99 +193,189 @@
     </div>
 
     <!-- ══════════════════════════════════
-         SLIDE 4 — DECORATOR
+         SLIDE 5 — DECORATOR: CONCEITO
     ═══════════════════════════════════ -->
-    <div class="slide" id="s4">
+    <div class="slide" id="s5">
         <div class="slide-header">
             <span class="ptag pt-d">Decorator</span>
             <h2 class="slide-h2">Equipamentos como Wrappers</h2>
+            <span class="part-tag">1 · 2</span>
         </div>
         <div class="split">
             <div class="split-left">
                 <div class="prob-box">
                     <div class="box-lbl d">Sem o padrão</div>
-                    <p class="box-txt">Uma subclasse por combinação: <code>GuerreiroComEspada</code>, <code>GuerreiroComEspadaEEscudo</code>… Explosão combinatória de classes.</p>
+                    <p class="box-txt">Uma subclasse por combinação: <code>GuerreiroComEspada</code>, <code>GuerreiroComEspadaEEscudo</code>… Explosão combinatória de classes impossível de manter.</p>
                 </div>
                 <div class="sol-box">
                     <div class="box-lbl s">Com Decorator</div>
-                    <p class="box-txt">Cada equipamento <em>envolve</em> o personagem anterior e delega tudo, sobrescrevendo apenas o atributo que modifica. Qualquer combinação funciona sem nova classe.</p>
+                    <p class="box-txt">Cada equipamento <em>envolve</em> o personagem e delega tudo, sobrescrevendo apenas o atributo que modifica. Qualquer combinação funciona sem nova classe.</p>
                 </div>
                 <ul class="flist" style="margin-top:1rem">
-                    <li><code style="color:var(--orange)">SwordDecorator</code> — +10 ATK &nbsp;|&nbsp; <code style="color:var(--orange)">ShieldDecorator</code> — +8 DEF</li>
-                    <li><code style="color:var(--orange)">AmuletDecorator</code> — +5 ATK, +30 HP máximo (para o Mago)</li>
-                    <li>Guerreiro: <code>ShieldDecorator(SwordDecorator(h))</code> — dois wrappers empilhados</li>
+                    <li>Guerreiro: 2 wrappers empilhados — <code style="color:var(--orange)">Shield(Sword(hero))</code></li>
+                    <li>Mago: 1 wrapper — <code style="color:var(--orange)">Amulet(hero)</code> — +5 ATK e +30 HP máximo</li>
+                    <li>O engine só enxerga <code>Character</code> — não sabe quantos wrappers existem</li>
                 </ul>
             </div>
             <div class="code-block">
-                <div class="code-title">CharacterDecorator.java · SwordDecorator.java · BattleEngine.java</div>
-                <pre><span class="kw">public abstract class</span> <span class="cls">CharacterDecorator</span> <span class="kw">extends</span> <span class="cls">Character</span> {
-    <span class="kw">protected final</span> <span class="cls">Character</span> wrapped;
+                <div class="code-title">Cadeia de delegação — Guerreiro com Espada e Escudo</div>
+                <pre><span class="cmt">// Chamada: equipped.getAtk()</span>
+<span class="cmt">// Percorre a pilha de wrappers até o Hero raiz:</span>
 
-    <span class="kw">public</span> <span class="cls">CharacterDecorator</span>(<span class="cls">Character</span> wrapped) {
-        <span class="cmt">// Inicializa o super com valores do wrapped...</span>
-        <span class="kw">super</span>(wrapped.<span class="fn">getName</span>(), wrapped.<span class="fn">getHp</span>(),
-              wrapped.<span class="fn">getMaxHp</span>(), wrapped.<span class="fn">getAtk</span>(), wrapped.<span class="fn">getDef</span>());
-        <span class="kw">this</span>.wrapped = wrapped;
-    }
-    <span class="cmt">// ...mas sobrescreve todos os getters para delegar ao wrapped</span>
-    <span class="kw">@Override public</span> <span class="tp">int</span>  <span class="fn">getAtk</span>()          { <span class="kw">return</span> wrapped.<span class="fn">getAtk</span>(); }
-    <span class="kw">@Override public void</span> <span class="fn">takeDamage</span>(<span class="tp">int</span> h) { wrapped.<span class="fn">takeDamage</span>(h); }
-}
+<span class="cls">ShieldDecorator</span>.<span class="fn">getAtk</span>()  <span class="cmt">// → delega para wrapped</span>
+    └── <span class="cls">SwordDecorator</span>.<span class="fn">getAtk</span>()  <span class="cmt">// → wrapped.getAtk() + 10</span>
+            └── <span class="cls">Hero</span>.<span class="fn">getAtk</span>()  <span class="cmt">// → 20 (base)</span>
 
-<span class="kw">public class</span> <span class="cls">SwordDecorator</span> <span class="kw">extends</span> <span class="cls">CharacterDecorator</span> {
-    <span class="kw">@Override</span>
-    <span class="kw">public</span> <span class="tp">int</span> <span class="fn">getAtk</span>() { <span class="kw">return</span> wrapped.<span class="fn">getAtk</span>() + <span class="num">10</span>; }
-}
+<span class="cmt">// Resultado final: 20 + 10 = 30 ATK</span>
 
-<span class="cmt">// Em BattleEngine.createHero() — composição em camadas:</span>
-h = <span class="kw">new</span> <span class="cls">Hero</span>(name, <span class="num">120</span>, <span class="num">120</span>, <span class="num">20</span>, <span class="num">15</span>, <span class="kw">new</span> <span class="cls">WarriorAttack</span>(), ...);
-equipped = <span class="kw">new</span> <span class="cls">ShieldDecorator</span>(<span class="kw">new</span> <span class="cls">SwordDecorator</span>(h));</pre>
+
+<span class="cmt">// takeDamage() percorre o mesmo caminho:</span>
+<span class="cls">ShieldDecorator</span>.<span class="fn">takeDamage</span>(h) → wrapped.<span class="fn">takeDamage</span>(h)
+    └── <span class="cls">SwordDecorator</span>.<span class="fn">takeDamage</span>(h) → wrapped.<span class="fn">takeDamage</span>(h)
+            └── <span class="cls">Hero</span>.<span class="fn">takeDamage</span>(h) <span class="cmt">// HP modificado aqui</span>
+
+<span class="cmt">// O HP real vive no Hero. Decorators só delegam.</span></pre>
             </div>
         </div>
     </div>
 
     <!-- ══════════════════════════════════
-         SLIDE 5 — COMMAND
+         SLIDE 6 — DECORATOR: IMPLEMENTAÇÃO
     ═══════════════════════════════════ -->
-    <div class="slide" id="s5">
+    <div class="slide" id="s6">
+        <div class="slide-header">
+            <span class="ptag pt-d">Decorator</span>
+            <h2 class="slide-h2">Equipamentos como Wrappers</h2>
+            <span class="part-tag">2 · 2</span>
+        </div>
+        <div class="split">
+            <div class="split-left">
+                <ul class="flist">
+                    <li><code>CharacterDecorator</code> estende <code>Character</code> — mantém o contrato de tipo; o engine nunca precisa fazer cast</li>
+                    <li>O construtor copia os valores do <code>wrapped</code>, mas todos os getters delegam para ele</li>
+                    <li><code>SwordDecorator</code> sobrescreve <strong>apenas</strong> <code>getAtk()</code> — todo o resto passa para o wrapped sem alteração</li>
+                    <li><code>showEquipment()</code> no engine itera a cadeia com <code>instanceof</code> para exibir a lista de itens equipados</li>
+                </ul>
+                <div class="sol-box" style="margin-top:1rem">
+                    <div class="box-lbl s">Composição em BattleEngine.createHero()</div>
+                    <p class="box-txt">
+                        <code>equipped = <span style="color:var(--orange)">new ShieldDecorator(new SwordDecorator(h))</span>;</code><br>
+                        <code>equipped = <span style="color:var(--orange)">new AmuletDecorator(h)</span>;</code>
+                    </p>
+                </div>
+            </div>
+            <div class="code-block">
+                <div class="code-title">CharacterDecorator.java · SwordDecorator.java</div>
+                <pre><span class="kw">public abstract class</span> <span class="cls">CharacterDecorator</span> <span class="kw">extends</span> <span class="cls">Character</span> {
+    <span class="kw">protected final</span> <span class="cls">Character</span> wrapped;
+
+    <span class="kw">public</span> <span class="cls">CharacterDecorator</span>(<span class="cls">Character</span> wrapped) {
+        <span class="kw">super</span>(wrapped.<span class="fn">getName</span>(), wrapped.<span class="fn">getHp</span>(),
+              wrapped.<span class="fn">getMaxHp</span>(), wrapped.<span class="fn">getAtk</span>(), wrapped.<span class="fn">getDef</span>());
+        <span class="kw">this</span>.wrapped = wrapped;
+    }
+    <span class="cmt">// Todos os getters delegam ao wrapped — HP real fica no Hero</span>
+    <span class="kw">@Override public</span> <span class="tp">int</span>  <span class="fn">getAtk</span>()          { <span class="kw">return</span> wrapped.<span class="fn">getAtk</span>(); }
+    <span class="kw">@Override public void</span> <span class="fn">takeDamage</span>(<span class="tp">int</span> h) { wrapped.<span class="fn">takeDamage</span>(h); }
+    <span class="cmt">// ... demais getters também delegam</span>
+}
+
+<span class="cmt">// SwordDecorator — sobrescreve APENAS getAtk()</span>
+<span class="kw">public class</span> <span class="cls">SwordDecorator</span> <span class="kw">extends</span> <span class="cls">CharacterDecorator</span> {
+    <span class="kw">public</span> <span class="cls">SwordDecorator</span>(<span class="cls">Character</span> wrapped) { <span class="kw">super</span>(wrapped); }
+
+    <span class="kw">@Override</span>
+    <span class="kw">public</span> <span class="tp">int</span> <span class="fn">getAtk</span>() { <span class="kw">return</span> wrapped.<span class="fn">getAtk</span>() + <span class="num">10</span>; }
+    <span class="cmt">// Shield e Amulet: mesma estrutura; cada um sobrescreve 1 getter</span>
+}</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         SLIDE 7 — COMMAND: CONCEITO
+    ═══════════════════════════════════ -->
+    <div class="slide" id="s7">
         <div class="slide-header">
             <span class="ptag pt-c">Command</span>
             <h2 class="slide-h2">Ações de Turno com Undo</h2>
+            <span class="part-tag">1 · 2</span>
         </div>
         <div class="split">
             <div class="split-left">
                 <div class="prob-box">
                     <div class="box-lbl d">Sem o padrão</div>
-                    <p class="box-txt">Para reverter um ataque o engine precisaria guardar estado manual de cada operação — frágil, acoplado e impossível de generalizar para novos tipos de ação.</p>
+                    <p class="box-txt">Para reverter um ataque o engine precisaria guardar estado manual de cada operação — frágil e impossível de generalizar para novos tipos de ação.</p>
                 </div>
                 <div class="sol-box">
                     <div class="box-lbl s">Com Command</div>
                     <p class="box-txt">Cada ação é um objeto com <code>execute()</code> e <code>undo()</code>. O <code>CommandHistory</code> mantém uma pilha LIFO — reverter é só desempilhar e chamar <code>undo()</code>.</p>
                 </div>
-                <ul class="flist" style="margin-top:1rem">
+                <ul class="flist" style="margin-top:0.8rem">
+                    <li>O menu dinâmico usa <code style="color:var(--blue)">MenuEntry(label, action, takesTurn)</code> — ações são lambdas encapsuladas</li>
+                    <li><code style="color:var(--blue)">AttackCommand</code> e <code style="color:var(--blue)">GuardCommand</code> — dois Commands distintos no mesmo engine</li>
                     <li>Mago tem <span style="color:var(--blue)">1 uso de undo por inimigo</span> como habilidade especial</li>
-                    <li><code style="color:var(--blue)">AttackCommand</code> recebe os observers no construtor e notifica em <code>execute()</code></li>
-                    <li><code style="color:var(--blue)">undo()</code> restaura o HP exato e imprime a mensagem de reversão</li>
                 </ul>
             </div>
             <div class="code-block">
-                <div class="code-title">TurnCommand.java · AttackCommand.java</div>
+                <div class="code-title">TurnCommand.java · CommandHistory.java · BattleEngine.java (trecho)</div>
                 <pre><span class="kw">public interface</span> <span class="cls">TurnCommand</span> {
     <span class="tp">void</span> <span class="fn">execute</span>();
     <span class="tp">void</span> <span class="fn">undo</span>();
 }
 
-<span class="kw">public class</span> <span class="cls">AttackCommand</span> <span class="kw">implements</span> <span class="cls">TurnCommand</span> {
+<span class="cmt">// Implementações no IronTurn:</span>
+<span class="cls">TurnCommand</span>
+├── <span class="cls">AttackCommand</span>  <span class="cmt">// ataque + notifica observers + undo()</span>
+└── <span class="cls">GuardCommand</span>   <span class="cmt">// DEF ×2 por 1 turno + revert()</span>
+
+<span class="cmt">// Menu dinâmico — Command como lambda em MenuEntry:</span>
+<span class="kw">private record</span> <span class="cls">MenuEntry</span>(<span class="cls">String</span> label, <span class="cls">Runnable</span> action, <span class="tp">boolean</span> takesTurn) {}
+
+<span class="cmt">// buildMenu() monta opções de acordo com a classe do herói:</span>
+menu.<span class="fn">add</span>(<span class="kw">new</span> <span class="cls">MenuEntry</span>(<span class="str">"Atacar"</span>,   () -&gt; <span class="kw">new</span> <span class="cls">AttackCommand</span>(...), <span class="kw">true</span>));
+menu.<span class="fn">add</span>(<span class="kw">new</span> <span class="cls">MenuEntry</span>(<span class="str">"Defender"</span>, () -&gt; <span class="kw">new</span> <span class="cls">GuardCommand</span>(...),  <span class="kw">true</span>));  <span class="cmt">// Guerreiro</span>
+menu.<span class="fn">add</span>(<span class="kw">new</span> <span class="cls">MenuEntry</span>(<span class="str">"Reverter"</span>, () -&gt; history.<span class="fn">undo</span>(),         <span class="kw">false</span>)); <span class="cmt">// Mago</span></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         SLIDE 8 — COMMAND: IMPLEMENTAÇÃO
+    ═══════════════════════════════════ -->
+    <div class="slide" id="s8">
+        <div class="slide-header">
+            <span class="ptag pt-c">Command</span>
+            <h2 class="slide-h2">Ações de Turno com Undo</h2>
+            <span class="part-tag">2 · 2</span>
+        </div>
+        <div class="split">
+            <div class="split-left">
+                <ul class="flist">
+                    <li><code>damageDealt</code> salvo como campo — o <code>undo()</code> reverte o dano <em>exato</em> causado, não um valor estimado</li>
+                    <li><code>AttackCommand.execute()</code> é também o ponto de integração com o Observer — notifica após aplicar o dano</li>
+                    <li><code>GuardCommand</code> usa <code>revert()</code> em vez de <code>undo()</code> — ciclo de vida gerenciado pelo engine via <code>activeGuard</code></li>
+                    <li>"Reverter Turno" chama <code>history.undo()</code> duas vezes — desfaz o ataque do inimigo <em>e</em> do herói</li>
+                </ul>
+                <div class="prob-box" style="margin-top:1rem">
+                    <div class="box-lbl d">Decisão de design</div>
+                    <p class="box-txt"><code>GuardCommand</code> não entra na pilha de <code>CommandHistory</code> — tem ciclo de vida próprio, revertido automaticamente no fim do turno.</p>
+                </div>
+            </div>
+            <div class="code-block">
+                <div class="code-title">AttackCommand.java</div>
+                <pre><span class="kw">public class</span> <span class="cls">AttackCommand</span> <span class="kw">implements</span> <span class="cls">TurnCommand</span> {
     <span class="kw">private final</span> <span class="cls">Character</span> attacker, target;
     <span class="kw">private final</span> List&lt;<span class="cls">BattleObserver</span>&gt; observers;
-    <span class="kw">private int</span> damageDealt; <span class="cmt">// salvo para reverter</span>
+    <span class="kw">private int</span> damageDealt; <span class="cmt">// salvo para undo exato</span>
 
     <span class="kw">@Override public void</span> <span class="fn">execute</span>() {
-        damageDealt = attacker.<span class="fn">attack</span>(target);
-        target.<span class="fn">takeDamage</span>(damageDealt);
-        <span class="cmt">// Command dispara os Observers diretamente</span>
+        damageDealt = attacker.<span class="fn">attack</span>(target);    <span class="cmt">// → Strategy.execute()</span>
+        target.<span class="fn">takeDamage</span>(damageDealt);            <span class="cmt">// → Decorator delega ao Hero</span>
+
         <span class="cls">BattleEvent</span> event = <span class="kw">new</span> <span class="cls">BattleEvent</span>(attacker, target, damageDealt);
-        <span class="kw">for</span> (<span class="cls">BattleObserver</span> o : observers) o.<span class="fn">onEvent</span>(event);
+        <span class="kw">for</span> (<span class="cls">BattleObserver</span> o : observers)
+            o.<span class="fn">onEvent</span>(event);                       <span class="cmt">// → Observers notificados</span>
     }
 
     <span class="kw">@Override public void</span> <span class="fn">undo</span>() {
@@ -560,91 +389,141 @@ equipped = <span class="kw">new</span> <span class="cls">ShieldDecorator</span>(
     </div>
 
     <!-- ══════════════════════════════════
-         SLIDE 6 — OBSERVER
+         SLIDE 9 — OBSERVER: CONCEITO
     ═══════════════════════════════════ -->
-    <div class="slide" id="s6">
+    <div class="slide" id="s9">
         <div class="slide-header">
             <span class="ptag pt-o">Observer</span>
             <h2 class="slide-h2">Eventos de Batalha</h2>
+            <span class="part-tag">1 · 2</span>
         </div>
         <div class="split">
             <div class="split-left">
                 <div class="prob-box">
                     <div class="box-lbl d">Sem o padrão</div>
-                    <p class="box-txt">O <code>BattleEngine</code> chamaria explicitamente o logger e o display em cada ação — acoplamento direto. Adicionar um novo listener exigiria modificar o engine.</p>
+                    <p class="box-txt">O <code>BattleEngine</code> chamaria explicitamente o logger e o display em cada ação — acoplamento direto. Adicionar um listener novo exigiria modificar o engine.</p>
                 </div>
                 <div class="sol-box">
                     <div class="box-lbl s">Com Observer</div>
-                    <p class="box-txt">O <code>AttackCommand</code> recebe a lista de observers e dispara um <code>BattleEvent</code> após cada ação. Adicionar um novo listener é só implementar a interface e registrar em <code>setup()</code>.</p>
+                    <p class="box-txt">O <code>AttackCommand</code> recebe a lista de observers e dispara um <code>BattleEvent</code> após cada ação. Adicionar um listener é só implementar a interface e registrar em <code>setup()</code>.</p>
                 </div>
                 <ul class="flist" style="margin-top:1rem">
                     <li><code style="color:var(--green)">BattleLogger</code> — registra histórico completo da partida</li>
-                    <li><code style="color:var(--green)">StatusDisplay</code> — exibe barras de HP após cada evento</li>
-                    <li><code style="color:var(--green)">BattleEvent</code> — classe com campos <code>final</code>; imutável por design</li>
+                    <li><code style="color:var(--green)">StatusDisplay</code> — exibe barras de HP coloridas após cada evento</li>
+                    <li><code style="color:var(--green)">BattleEvent.Type</code> — enum <code>ATTACK</code> / <code>GUARD</code>; observers reagem diferente por tipo</li>
                 </ul>
             </div>
             <div class="code-block">
-                <div class="code-title">BattleObserver.java · BattleEvent.java · BattleEngine.java</div>
-                <pre><span class="kw">public interface</span> <span class="cls">BattleObserver</span> {
-    <span class="tp">void</span> <span class="fn">onEvent</span>(<span class="cls">BattleEvent</span> battleEvent);
-}
-
-<span class="cmt">// Classe com campos final — imutável sem ser record</span>
-<span class="kw">public class</span> <span class="cls">BattleEvent</span> {
-    <span class="kw">private final</span> <span class="cls">Character</span> attacker, target;
-    <span class="kw">private final int</span> hitTaken;
-
-    <span class="kw">public</span> <span class="cls">BattleEvent</span>(<span class="cls">Character</span> a, <span class="cls">Character</span> t, <span class="tp">int</span> hit) { ... }
-    <span class="kw">public int</span> <span class="fn">getHitTaken</span>() { <span class="kw">return</span> hitTaken; }
-}
-
-<span class="cmt">// Em BattleEngine.setup() — registro dos observers:</span>
+                <div class="code-title">Fluxo de notificação — quem fala com quem</div>
+                <pre><span class="cmt">// Setup — registro em BattleEngine.setup():</span>
 observers.<span class="fn">add</span>(<span class="kw">new</span> <span class="cls">BattleLogger</span>());
 observers.<span class="fn">add</span>(<span class="kw">new</span> <span class="cls">StatusDisplay</span>());
 
-<span class="cmt">// A notificação ocorre em AttackCommand.execute():</span>
-<span class="cls">BattleEvent</span> event = <span class="kw">new</span> <span class="cls">BattleEvent</span>(attacker, target, damageDealt);
-<span class="kw">for</span> (<span class="cls">BattleObserver</span> observer : observers)
-    observer.<span class="fn">onEvent</span>(event); <span class="cmt">// broadcast para todos</span></pre>
+<span class="cmt">// Sem Observer — acoplamento direto (evitado):</span>
+<span class="cmt">// engine → logger.log(...)              → acoplado</span>
+<span class="cmt">// engine → display.show(...)            → acoplado</span>
+<span class="cmt">// engine → [novo listener]              → MODIFICAR O ENGINE</span>
+
+<span class="cmt">// Com Observer — AttackCommand faz o broadcast:</span>
+<span class="cls">AttackCommand</span>.<span class="fn">execute</span>()
+    └─ <span class="kw">for</span> (<span class="cls">BattleObserver</span> o : observers) o.<span class="fn">onEvent</span>(event)
+            ├── <span class="cls">BattleLogger</span>.<span class="fn">onEvent</span>()    <span class="cmt">// registra histórico</span>
+            └── <span class="cls">StatusDisplay</span>.<span class="fn">onEvent</span>()  <span class="cmt">// exibe barra de HP</span>
+
+<span class="cmt">// Adicionar listener: zero alteração no engine:</span>
+observers.<span class="fn">add</span>(<span class="kw">new</span> <span class="cls">SoundEffect</span>()); <span class="cmt">// basta registrar</span></pre>
             </div>
         </div>
     </div>
 
     <!-- ══════════════════════════════════
-         SLIDE 7 — ARCHITECTURE
+         SLIDE 10 — OBSERVER: IMPLEMENTAÇÃO
     ═══════════════════════════════════ -->
-    <div class="slide" id="s7">
+    <div class="slide" id="s10">
+        <div class="slide-header">
+            <span class="ptag pt-o">Observer</span>
+            <h2 class="slide-h2">Eventos de Batalha</h2>
+            <span class="part-tag">2 · 2</span>
+        </div>
+        <div class="split">
+            <div class="split-left">
+                <ul class="flist">
+                    <li><code>BattleEvent</code> é imutável — todos os campos são <code>final</code>, sem setters; observers não podem corromper o evento</li>
+                    <li>O enum <code>Type</code> foi adicionado para distinguir <code>ATTACK</code> de <code>GUARD</code> sem criar subclasses de evento</li>
+                    <li>Construtor de conveniência usa <code>Type.ATTACK</code> como padrão — código existente não precisou mudar ao adicionar <code>GUARD</code></li>
+                    <li>Cada observer decide o que ler do evento — <code>BattleLogger</code> usa <code>getType()</code> para exibir mensagem distinta em guarda</li>
+                </ul>
+                <div class="sol-box" style="margin-top:1rem">
+                    <div class="box-lbl s">Open/Closed na prática</div>
+                    <p class="box-txt">Adicionar o <code>GuardCommand</code> exigiu apenas inserir <code>Type.GUARD</code> no enum. Os observers existentes já recebem o tipo — basta um <code>switch</code> no <code>onEvent()</code>.</p>
+                </div>
+            </div>
+            <div class="code-block">
+                <div class="code-title">BattleObserver.java · BattleEvent.java</div>
+                <pre><span class="kw">public interface</span> <span class="cls">BattleObserver</span> {
+    <span class="tp">void</span> <span class="fn">onEvent</span>(<span class="cls">BattleEvent</span> event);
+}
+
+<span class="kw">public class</span> <span class="cls">BattleEvent</span> {
+    <span class="kw">public enum</span> <span class="cls">Type</span> { ATTACK, GUARD }
+
+    <span class="kw">private final</span> <span class="cls">Character</span> attacker, target;
+    <span class="kw">private final int</span>       hitTaken;
+    <span class="kw">private final</span> <span class="cls">Type</span>      type;
+
+    <span class="cmt">// Construtor de conveniência — Type.ATTACK por padrão</span>
+    <span class="kw">public</span> <span class="cls">BattleEvent</span>(<span class="cls">Character</span> a, <span class="cls">Character</span> t, <span class="tp">int</span> hit) {
+        <span class="kw">this</span>(a, t, hit, <span class="cls">Type</span>.ATTACK);
+    }
+    <span class="kw">public</span> <span class="cls">BattleEvent</span>(<span class="cls">Character</span> a, <span class="cls">Character</span> t, <span class="tp">int</span> hit, <span class="cls">Type</span> type) {
+        <span class="cmt">// Todos os campos são final — imutável por design</span>
+        <span class="kw">this</span>.attacker = a;   <span class="kw">this</span>.target  = t;
+        <span class="kw">this</span>.hitTaken = hit; <span class="kw">this</span>.type    = type;
+    }
+    <span class="kw">public</span> <span class="cls">Type</span> <span class="fn">getType</span>()     { <span class="kw">return</span> type;     }
+    <span class="kw">public int</span>  <span class="fn">getHitTaken</span>() { <span class="kw">return</span> hitTaken; }
+}</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         SLIDE 11 — ARCHITECTURE
+    ═══════════════════════════════════ -->
+    <div class="slide" id="s11">
         <div class="slide-header">
             <h2 class="slide-h2">Como Tudo se Conecta</h2>
         </div>
         <div style="display:flex;justify-content:center;align-items:center;flex:1">
             <div class="arch-box"><span style="color:var(--gold)">BattleEngine.setup()</span>
-                │
-                ├─ createHero()
-                │    ├─ new Hero(..., <span style="color:var(--teal)">new WarriorAttack()</span>)         ◀ <span style="color:var(--teal)">Strategy</span> injetada
-                │    └─ equipped = <span style="color:var(--orange)">ShieldDecorator(SwordDecorator(h))</span> ◀ <span style="color:var(--orange)">Decorator</span> empilhado
-                │
-                └─ observers.add(<span style="color:var(--green)">new BattleLogger()</span>)             ◀ <span style="color:var(--green)">Observer</span> registrado
-                observers.add(<span style="color:var(--green)">new StatusDisplay()</span>)
+│
+├─ createHero()
+│    ├─ new Hero(..., <span style="color:var(--teal)">new WarriorAttack()</span>)              ◀ <span style="color:var(--teal)">Strategy</span> injetada
+│    └─ equipped = <span style="color:var(--orange)">ShieldDecorator(SwordDecorator(h))</span>  ◀ <span style="color:var(--orange)">Decorator</span> empilhado
+│
+└─ observers: [<span style="color:var(--green)">BattleLogger</span>, <span style="color:var(--green)">StatusDisplay</span>]            ◀ <span style="color:var(--green)">Observers</span> registrados
 
-                <span style="color:var(--gold)">BattleEngine.loop()</span>  — a cada turno:
-                │
-                └─ new <span style="color:var(--blue)">AttackCommand(equipped, enemy, observers)</span>  ◀ <span style="color:var(--blue)">Command</span> criado
-                │
-                ├─ execute()
-                │    ├─ attacker.attack(target)    → <span style="color:var(--teal)">Strategy.execute()</span> chamada aqui
-                │    ├─ target.takeDamage()        → <span style="color:var(--orange)">Decorator</span> delega ao wrapped
-                │    └─ for observer → onEvent()   → <span style="color:var(--green)">Observer</span> notificado aqui
-                │
-                └─ [Mago] undo()
-                └─ target.heal(damageDealt)  → HP revertido com precisão</div>
+<span style="color:var(--gold)">BattleEngine.loop()</span>  — a cada turno:
+│
+├─ buildMenu() → List&lt;MenuEntry&gt;   <span style="color:var(--dim)">(menu dinâmico — opções variam por classe)</span>
+│
+├─ new <span style="color:var(--blue)">AttackCommand</span>(equipped, enemy, observers)   ◀ <span style="color:var(--blue)">Command</span> (ataque)
+│    ├─ execute()
+│    │    ├─ attacker.attack()    → <span style="color:var(--teal)">Strategy.execute()</span> chamada aqui
+│    │    ├─ target.takeDamage()  → <span style="color:var(--orange)">Decorator</span> delega ao Hero
+│    │    └─ BattleEvent(ATTACK)  → <span style="color:var(--green)">Observers</span> notificados
+│    └─ undo() → target.heal(damageDealt)        <span style="color:var(--dim)">[Mago]</span>
+│
+└─ new <span style="color:var(--blue)">GuardCommand</span>(equipped, enemy, observers)   ◀ <span style="color:var(--blue)">Command</span> (guarda)
+     ├─ execute() → DEF ×2  +  BattleEvent(GUARD)  → <span style="color:var(--green)">Observers</span>
+     └─ revert()  → DEF restaurada                  <span style="color:var(--dim)">[Guerreiro, fim do turno]</span></div>
         </div>
     </div>
 
     <!-- ══════════════════════════════════
-         SLIDE 8 — DEMO
+         SLIDE 12 — DEMO
     ═══════════════════════════════════ -->
-    <div class="slide" id="s8" style="align-items:center;justify-content:center;gap:0;padding-bottom:5rem">
+    <div class="slide" id="s12" style="align-items:center;justify-content:center;gap:0;padding-bottom:5rem">
         <div class="slide-header" style="width:100%;justify-content:center">
             <h2 class="slide-h2">Demonstração</h2>
         </div>
@@ -657,19 +536,19 @@ observers.<span class="fn">add</span>(<span class="kw">new</span> <span class="c
         <div class="demo-grid">
             <div class="demo-card">
                 <p class="demo-card-lbl" style="color:var(--teal)">Strategy</p>
-                <p class="demo-card-txt">Observe como Guerreiro e Mago produzem dano de formas distintas</p>
+                <p class="demo-card-txt">Guerreiro e Mago produzem dano de formas distintas — observe crítico, penetração vs. dano fixo</p>
             </div>
             <div class="demo-card">
                 <p class="demo-card-lbl" style="color:var(--orange)">Decorator</p>
-                <p class="demo-card-txt">Note ATK e DEF aumentados pelos equipamentos no status</p>
+                <p class="demo-card-txt">Use [4] Ver Status — note ATK e DEF aumentados e a lista de equipamentos ativos</p>
             </div>
             <div class="demo-card">
                 <p class="demo-card-lbl" style="color:var(--blue)">Command</p>
-                <p class="demo-card-txt">Escolha o Mago e use [2] para reverter o ataque sofrido</p>
+                <p class="demo-card-txt">Guerreiro: use [2] Defender. Mago: use [2] ou [3] para reverter turno ou batalha</p>
             </div>
             <div class="demo-card">
                 <p class="demo-card-lbl" style="color:var(--green)">Observer</p>
-                <p class="demo-card-txt">Cada ação atualiza o log e as barras de HP automaticamente</p>
+                <p class="demo-card-txt">Toda ação — ataque e guarda — atualiza barras e log automaticamente via BattleEvent</p>
             </div>
         </div>
         <p style="color:var(--dim);font-family:'Fira Code',monospace;font-size:0.72rem;margin-top:1.5rem">
@@ -679,43 +558,12 @@ observers.<span class="fn">add</span>(<span class="kw">new</span> <span class="c
 
 </div><!-- /slideshow -->
 
-<!-- Navigation -->
 <div class="nav">
     <button class="nav-btn" onclick="go(-1)">←</button>
     <div class="nav-dots" id="dots"></div>
     <button class="nav-btn" onclick="go(1)">→</button>
 </div>
 
-<script>
-    const slides = document.querySelectorAll('.slide');
-    const dotsEl = document.getElementById('dots');
-    const slideIdEl = document.getElementById('slide-id');
-    let cur = 0;
-
-    slides.forEach((_, i) => {
-        const d = document.createElement('div');
-        d.className = 'nav-dot' + (i === 0 ? ' active' : '');
-        d.onclick = () => goTo(i);
-        dotsEl.appendChild(d);
-    });
-
-    function goTo(n) {
-        slides[cur].classList.remove('active');
-        cur = Math.max(0, Math.min(n, slides.length - 1));
-        slides[cur].classList.add('active');
-        document.querySelectorAll('.nav-dot').forEach((d, i) => {
-            d.classList.toggle('active', i === cur);
-        });
-        const id = 'slide_' + String(cur + 1).padStart(2, '0');
-        slideIdEl.textContent = id;
-    }
-
-    function go(dir) { goTo(cur + dir); }
-
-    document.addEventListener('keydown', e => {
-        if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') go(1);
-        if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp') go(-1);
-    });
-</script>
+<script src="slides.js"></script>
 </body>
 </html>

@@ -23,6 +23,7 @@ public abstract class Character {
     public int getMaxHp() { return maxHp; }
     public int getAtk() { return atk; }
     public int getDef() { return def; }
+    public int getBurnDamage() { return 0; }
 
     public void takeDamage(int hitTaken) {
         hp = Math.max(0, hp - hitTaken);

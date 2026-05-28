@@ -4,7 +4,7 @@ import ironturn.model.Character;
 
 public class BattleEvent {
 
-    public enum Type { ATTACK, GUARD }
+    public enum Type { ATTACK, GUARD, BURN_DAMAGE }
 
     private final Character attacker;
     private final Character target;

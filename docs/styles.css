@@ -1,0 +1,425 @@
+/* ═══════════════════════════════════════════════════
+   IronTurn — Presentation Styles
+   Structure:
+     1. Reset & Variables
+     2. Base / Body
+     3. Slide Engine
+     4. Corner Decorations
+     5. Navigation
+     6. Slide Header
+     7. Pattern & Part Tags
+     8. Problem / Solution Boxes
+     9. Feature List
+    10. Code Block & Syntax Highlighting
+    11. Split Layout
+    12. Slide-specific: Title (s1)
+    13. Slide-specific: Overview (s2)
+    14. Slide-specific: Architecture (s11)
+    15. Slide-specific: Demo (s12)
+═══════════════════════════════════════════════════ */
+
+/* ── 1. Reset & Variables ── */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg:         #0d1117;
+    --surface:    #161b22;
+    --surface2:   #1e2530;
+    --border:     #30363d;
+    --gold:       #d4a017;
+    --gold-glow:  rgba(212, 160, 23, 0.15);
+    --teal:       #58c4dc;
+    --blue:       #79c0ff;
+    --green:      #7ee787;
+    --orange:     #ffa657;
+    --red:        #f85149;
+    --purple:     #d2a8ff;
+    --text:       #e6edf3;
+    --muted:      #8b949e;
+    --dim:        #484f58;
+}
+
+/* ── 2. Base / Body ── */
+html, body { height: 100%; }
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Scan-line overlay */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,        transparent        3px,
+        rgba(0,0,0,0.025), rgba(0,0,0,0.025)  4px
+    );
+    pointer-events: none;
+    z-index: 200;
+}
+
+/* ── 3. Slide Engine ── */
+.slideshow {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+}
+
+.slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 2.5rem 5rem 5rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+.slide.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+/* ── 4. Corner Decorations ── */
+.deco {
+    position: fixed;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.65rem;
+    color: var(--dim);
+    z-index: 100;
+    letter-spacing: 0.05em;
+}
+.deco-tl { top: 1.4rem; left: 2.5rem; }
+.deco-tr { top: 1.4rem; right: 2.5rem; text-align: right; }
+.deco-bl { bottom: 1.8rem; left: 2.5rem; }
+
+/* ── 5. Navigation ── */
+.nav {
+    position: fixed;
+    bottom: 1.6rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    z-index: 100;
+}
+.nav-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+.nav-btn:hover {
+    color: var(--text);
+    border-color: var(--gold);
+}
+.nav-dots {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+.nav-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--dim);
+    cursor: pointer;
+    transition: all 0.25s;
+}
+.nav-dot.active {
+    background: var(--gold);
+    width: 16px;
+    border-radius: 3px;
+}
+
+/* ── 6. Slide Header ── */
+.slide-header {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.75rem;
+    flex-shrink: 0;
+}
+.slide-h2 {
+    font-family: 'Cinzel', serif;
+    font-size: 1.65rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+/* ── 7. Pattern & Part Tags ── */
+.ptag {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.72rem;
+    padding: 3px 10px;
+    border-radius: 4px;
+    border: 1px solid;
+    flex-shrink: 0;
+}
+.pt-s { color: var(--teal);   border-color: var(--teal);   }
+.pt-d { color: var(--orange); border-color: var(--orange); }
+.pt-c { color: var(--blue);   border-color: var(--blue);   }
+.pt-o { color: var(--green);  border-color: var(--green);  }
+
+/* "1 · 2" / "2 · 2" indicator pushed to the right */
+.part-tag {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.65rem;
+    color: var(--dim);
+    margin-left: auto;
+    letter-spacing: 0.08em;
+}
+
+/* ── 8. Problem / Solution Boxes ── */
+.prob-box,
+.sol-box {
+    border-radius: 7px;
+    padding: 0.65rem 1rem;
+    margin-bottom: 0.9rem;
+}
+.prob-box {
+    background: rgba(248, 81,  73,  0.07);
+    border:     1px solid rgba(248, 81,  73,  0.22);
+}
+.sol-box {
+    background: rgba(126, 231, 135, 0.05);
+    border:     1px solid rgba(126, 231, 135, 0.18);
+}
+.box-lbl {
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 0.35rem;
+}
+.box-lbl.d { color: var(--red);   }
+.box-lbl.s { color: var(--green); }
+.box-txt {
+    font-size: 0.875rem;
+    color: var(--muted);
+    line-height: 1.65;
+}
+.box-txt code {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.82rem;
+    color: var(--text);
+}
+
+/* ── 9. Feature List ── */
+.flist {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.flist li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    font-size: 0.875rem;
+    color: var(--muted);
+    line-height: 1.55;
+}
+.flist li::before {
+    content: '▸';
+    color: var(--gold);
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+.flist li code {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.8rem;
+}
+
+/* ── 10. Code Block & Syntax Highlighting ── */
+.code-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.1rem 1.4rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.code-title {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.65rem;
+    color: var(--dim);
+    padding-bottom: 0.75rem;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    letter-spacing: 0.04em;
+}
+pre {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.78rem;
+    line-height: 1.75;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Syntax token colours */
+.kw  { color: var(--teal);   }
+.tp  { color: var(--blue);   }
+.fn  { color: var(--purple); }
+.str { color: var(--orange); }
+.cmt { color: var(--dim);    font-style: italic; }
+.num { color: var(--green);  }
+.cls { color: var(--orange); }
+
+/* ── 11. Split Layout ── */
+.split {
+    display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 2rem;
+    flex: 1;
+    min-height: 0;
+}
+.split-left {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0;
+}
+
+/* ── 12. Title Slide (#s1) ── */
+#s1 {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: 0;
+    padding: 0;
+}
+.game-title {
+    font-family: 'Cinzel', serif;
+    font-size: 6.5rem;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 0.08em;
+    line-height: 1;
+    text-shadow: 0 0 60px rgba(212, 160, 23, 0.25);
+}
+.game-sub {
+    font-size: 1rem;
+    color: var(--muted);
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    font-weight: 300;
+    margin-top: 1rem;
+}
+.tag-row {
+    display: flex;
+    gap: 0.7rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 2rem;
+}
+.hint {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.72rem;
+    color: var(--dim);
+    margin-top: 3rem;
+    letter-spacing: 0.05em;
+}
+
+/* ── 13. Overview Slide (#s2) ── */
+.pat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.85rem;
+}
+.pat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 1rem 1.1rem;
+    transition: border-color 0.2s;
+}
+.pat-card:hover { border-color: var(--gold); }
+.pat-card-top {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.5rem;
+}
+.pat-card-name {
+    font-family: 'Cinzel', serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+.pat-card-desc {
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.55;
+}
+
+/* ── 14. Architecture Slide (#s11) ── */
+.arch-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem 2rem;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.8rem;
+    line-height: 1.9;
+    white-space: pre;
+    color: var(--muted);
+}
+
+/* ── 15. Demo Slide (#s12) ── */
+.demo-cmd {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 0.65rem 1.2rem;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.88rem;
+    color: var(--green);
+    width: 100%;
+    max-width: 560px;
+}
+.demo-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.85rem;
+    margin-top: 1.75rem;
+    max-width: 860px;
+    width: 100%;
+}
+.demo-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.9rem 1rem;
+    text-align: center;
+}
+.demo-card-lbl {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.68rem;
+    margin-bottom: 0.45rem;
+}
+.demo-card-txt {
+    font-size: 0.78rem;
+    color: var(--muted);
+    line-height: 1.55;
+}

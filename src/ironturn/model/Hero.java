@@ -12,6 +12,13 @@ public class Hero extends Character{
     private int undosRemaining;
     private int scrollCount = 0;
     private final List<Item> inventory = new ArrayList<>();
+    private int guardianDropCount = 0;
+    private boolean guardianArmed = false;
+
+    public boolean hasGuardianDrop()    { return guardianDropCount > 0; }
+    public boolean isGuardianArmed()    { return guardianArmed; }
+    public void addGuardianDrop()       { guardianDropCount++; }
+    public void disarmGuardian()        { guardianArmed = false; }
 
     public Hero(String name, int hp, int hpMax, int atk, int def, AttackStrategy strategy, HeroClass heroClass) {
         super(name, hp, hpMax, atk, def);
@@ -41,6 +48,13 @@ public class Hero extends Character{
         int amount = (int)(getMaxHp() * 0.5);
         heal(amount);
         return amount;
+    }
+
+    public boolean activateGuardian() {
+        if (guardianDropCount == 0) return false;
+        guardianDropCount--;
+        guardianArmed = true;
+        return true;
     }
 
     public void addToInventory(Item item) { inventory.add(item); }
