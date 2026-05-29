@@ -1,199 +1,160 @@
 /* ═══════════════════════════════════════════════════
-   IronTurn — Presentation Styles  (arcane codex edition)
-   Structure:
-     1.  Reset & Variables
-     2.  Base / Body + Background
-     3.  Slide Engine + Entrance Animation
-     4.  Corner Decorations
-     5.  Navigation
-     6.  Slide Header
-     7.  Pattern & Part Tags
-     8.  Problem / Solution Boxes
-     9.  Feature List
-    10.  Code Block & Syntax Highlighting
-    11.  Split Layout
-    12.  Slide-specific: Title (s1)
-    13.  Slide-specific: Overview (s2)
-    14.  Slide-specific: Architecture (s11)
-    15.  Slide-specific: Demo (s12)
+   IronTurn — Terminal Arcano
+   As cores do terminal, a alma do grimório.
 ═══════════════════════════════════════════════════ */
 
-/* ── 1. Reset & Variables ── */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-    --bg:         #0a0d12;
-    --surface:    #111620;
-    --surface2:   #191f2b;
-    --border:     #252c38;
-    --gold:       #c8970f;
-    --gold-light: #f0c840;
-    --gold-glow:  rgba(200, 151, 15, 0.18);
-    --teal:       #4db8d0;
-    --blue:       #6baef5;
-    --green:      #6dd97a;
-    --orange:     #f09a45;
-    --red:        #e84c45;
-    --purple:     #c9a0f5;
-    --text:       #dde6f0;
-    --muted:      #7a8694;
-    --dim:        #3e4653;
+    /* Paleta ANSI do jogo */
+    --bg:       #07090d;
+    --surface:  #0c1016;
+    --surface2: #111820;
+    --border:   #1c2430;
+
+    --teal:    #58c4dc;   /* Strategy  */
+    --orange:  #ffa657;   /* Decorator */
+    --blue:    #79c0ff;   /* Command   */
+    --green:   #56d364;   /* Observer  */
+    --red:     #f85149;
+    --yellow:  #f0c050;
+    --purple:  #d2a8ff;
+
+    --gold:      #c8a030;
+    --gold-lt:   #e8c840;
+    --gold-glow: rgba(200, 160, 48, 0.15);
+
+    --text:    #dde6f0;
+    --muted:   #66737f;
+    --dim:     #2e3840;
 }
 
-/* ── 2. Base / Body + Background ── */
+/* ── Escala para projetor ── */
+html { font-size: clamp(13px, 1.45vw, 20px); }
 html, body { height: 100%; }
 
 body {
-    background-color: var(--bg);
+    background: var(--bg);
     color: var(--text);
-    font-family: 'Inter', sans-serif;
+    font-family: 'Fira Code', monospace;
     height: 100vh;
     overflow: hidden;
 }
 
-/* Dot-grid texture */
-body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: radial-gradient(circle, rgba(200,151,15,0.07) 1px, transparent 1px);
-    background-size: 30px 30px;
-    pointer-events: none;
-    z-index: 0;
-}
-
-/* Radial vignette — darkens corners, focuses centre */
+/* ── Scanlines CRT ── */
 body::before {
     content: '';
     position: fixed;
     inset: 0;
-    background:
-            radial-gradient(ellipse 80% 75% at 50% 50%,
-            transparent 40%, rgba(0,0,0,0.55) 100%),
-            repeating-linear-gradient(
-                    0deg,
-                    transparent,        transparent        3px,
-                    rgba(0,0,0,0.018), rgba(0,0,0,0.018)  4px
-            );
+    background: repeating-linear-gradient(
+        to bottom,
+        transparent           0px, transparent           2px,
+        rgba(0, 0, 0, 0.032) 2px, rgba(0, 0, 0, 0.032) 4px
+    );
     pointer-events: none;
-    z-index: 200;
+    z-index: 400;
 }
 
-/* ── 3. Slide Engine + Entrance Animation ── */
-
-@keyframes slideEnter {
-    from {
-        opacity: 0;
-        transform: translateY(14px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.slideshow {
-    width: 100vw;
-    height: 100vh;
-    position: relative;
+/* ── Vinheta ── */
+body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse 90% 85% at 50% 50%,
+        transparent 45%, rgba(0,0,0,0.48) 100%);
+    pointer-events: none;
     z-index: 1;
 }
+
+/* ── Motor de slides ── */
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(10px); filter: brightness(0.65); }
+    to   { opacity: 1; transform: translateY(0);    filter: brightness(1);    }
+}
+
+.slideshow { width: 100vw; height: 100vh; position: relative; z-index: 2; }
 
 .slide {
     position: absolute;
     inset: 0;
     display: flex;
     flex-direction: column;
-    padding: 2.5rem 5rem 5rem;
+    padding: 1.8rem 4rem 4.5rem;
     opacity: 0;
     pointer-events: none;
-    /* no transition here — entrance handled by animation */
 }
 .slide.active {
     opacity: 1;
     pointer-events: all;
-    animation: slideEnter 0.38s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+    animation: slideIn 0.32s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
 }
 
-/* ── 4. Corner Decorations ── */
+/* Cantos grimório */
+.slide.active::before {
+    content: '';
+    position: absolute;
+    top: 1.2rem; left: 1.8rem;
+    width: 16px; height: 16px;
+    border-top: 1px solid var(--gold);
+    border-left: 1px solid var(--gold);
+    opacity: 0.45;
+}
+.slide.active::after {
+    content: '';
+    position: absolute;
+    bottom: 3.2rem; right: 1.8rem;
+    width: 16px; height: 16px;
+    border-bottom: 1px solid var(--gold);
+    border-right: 1px solid var(--gold);
+    opacity: 0.45;
+}
+
+/* ── Decorações de canto ── */
 .deco {
     position: fixed;
     font-family: 'Fira Code', monospace;
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     color: var(--dim);
     z-index: 100;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.07em;
 }
-.deco-tl { top: 1.4rem; left: 2.5rem; }
-.deco-tr { top: 1.4rem; right: 2.5rem; text-align: right; }
-.deco-bl { bottom: 1.8rem; left: 2.5rem; }
+.deco-tl { top: 1.1rem;  left: 2.2rem; }
+.deco-tr { top: 1.1rem;  right: 2.2rem; text-align: right; }
+.deco-bl { bottom: 1.4rem; left: 2.2rem; }
 
-/* Decorative corner brackets on slides */
-.slide::before,
-.slide::after {
-    content: '';
-    position: absolute;
-    width: 18px;
-    height: 18px;
-    opacity: 0;
-    transition: opacity 0.4s ease 0.1s;
-}
-.slide.active::before,
-.slide.active::after {
-    opacity: 1;
-}
-.slide::before {
-    top: 1.8rem;
-    right: 4.5rem;
-    border-top: 1px solid var(--gold);
-    border-right: 1px solid var(--gold);
-}
-.slide::after {
-    bottom: 4rem;
-    right: 4.5rem;
-    border-bottom: 1px solid var(--gold);
-    border-right: 1px solid var(--gold);
-}
-
-/* ── 5. Navigation ── */
+/* ── Navegação ── */
 .nav {
     position: fixed;
-    bottom: 1.6rem;
+    bottom: 1.3rem;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
     align-items: center;
-    gap: 1.25rem;
+    gap: 1.1rem;
     z-index: 100;
 }
 .nav-btn {
     background: var(--surface);
     border: 1px solid var(--border);
     color: var(--muted);
-    width: 32px;
-    height: 32px;
+    width: 1.85rem; height: 1.85rem;
     border-radius: 50%;
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 0.78rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
-    font-family: inherit;
+    transition: all 0.18s;
+    font-family: 'Fira Code', monospace;
 }
 .nav-btn:hover {
-    color: var(--gold-light);
+    color: var(--gold-lt);
     border-color: var(--gold);
-    box-shadow: 0 0 10px var(--gold-glow);
+    box-shadow: 0 0 8px var(--gold-glow);
 }
-.nav-dots {
-    display: flex;
-    gap: 5px;
-    align-items: center;
-}
+.nav-dots { display: flex; gap: 5px; align-items: center; }
 .nav-dot {
-    width: 5px;
-    height: 5px;
+    width: 5px; height: 5px;
     border-radius: 50%;
     background: var(--dim);
     cursor: pointer;
@@ -202,177 +163,214 @@ body::before {
 .nav-dot.active {
     background: var(--gold);
     width: 18px;
-    border-radius: 3px;
-    box-shadow: 0 0 8px rgba(200,151,15,0.5);
+    border-radius: 2px;
+    box-shadow: 0 0 7px rgba(200,160,48,0.5);
 }
 
-/* ── 6. Slide Header ── */
+/* ── Cabeçalho de slide ── */
 .slide-header {
     display: flex;
     align-items: center;
-    gap: 0.9rem;
-    padding-bottom: 1.25rem;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 1.75rem;
+    gap: 0.85rem;
+    padding-bottom: 0.9rem;
+    margin-bottom: 1.4rem;
     flex-shrink: 0;
     position: relative;
 }
-
-/* Gold accent line under header */
 .slide-header::after {
     content: '';
     position: absolute;
-    bottom: -1px;
-    left: 0;
-    width: 48px;
+    bottom: -1px; left: 0; right: 0;
     height: 1px;
-    background: var(--gold);
-    box-shadow: 0 0 8px rgba(200,151,15,0.6);
+    background: var(--border);
 }
-
+.slide-header::before {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0;
+    width: 2.5rem; height: 2px;
+    background: var(--gold);
+    box-shadow: 0 0 6px var(--gold-glow);
+    z-index: 1;
+}
 .slide-h2 {
     font-family: 'Cinzel', serif;
-    font-size: 1.65rem;
+    font-size: 1.5rem;
     font-weight: 600;
     color: var(--text);
 }
 
-/* ── 7. Pattern & Part Tags ── */
+/* ── Tags de padrão ── */
 .ptag {
     font-family: 'Fira Code', monospace;
-    font-size: 0.72rem;
-    padding: 3px 10px;
-    border-radius: 4px;
+    font-size: 0.65rem;
+    padding: 0.18em 0.7em;
+    border-radius: 3px;
     border: 1px solid;
     flex-shrink: 0;
-    transition: box-shadow 0.2s;
 }
-.pt-s { color: var(--teal);   border-color: var(--teal);   }
-.pt-d { color: var(--orange); border-color: var(--orange); }
-.pt-c { color: var(--blue);   border-color: var(--blue);   }
-.pt-o { color: var(--green);  border-color: var(--green);  }
-
-.pt-s:hover { box-shadow: 0 0 10px rgba(77,184,208,0.35); }
-.pt-d:hover { box-shadow: 0 0 10px rgba(240,154,69,0.35); }
-.pt-c:hover { box-shadow: 0 0 10px rgba(107,174,245,0.35); }
-.pt-o:hover { box-shadow: 0 0 10px rgba(109,217,122,0.35); }
-
+.pt-s { color: var(--teal);   border-color: var(--teal);   text-shadow: 0 0 7px rgba(88,196,220,0.4);  }
+.pt-d { color: var(--orange); border-color: var(--orange); text-shadow: 0 0 7px rgba(255,166,87,0.4);  }
+.pt-c { color: var(--blue);   border-color: var(--blue);   text-shadow: 0 0 7px rgba(121,192,255,0.4); }
+.pt-o { color: var(--green);  border-color: var(--green);  text-shadow: 0 0 7px rgba(86,211,100,0.4);  }
 .part-tag {
     font-family: 'Fira Code', monospace;
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     color: var(--dim);
     margin-left: auto;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
 }
 
-/* ── 8. Problem / Solution Boxes ── */
-.prob-box,
-.sol-box {
-    border-radius: 7px;
-    padding: 0.65rem 1rem;
-    margin-bottom: 0.9rem;
+/* ── Caixas problema/solução ── */
+.prob-box, .sol-box {
+    border-radius: 3px;
+    padding: 0.55rem 0.9rem;
+    margin-bottom: 0.8rem;
 }
 .prob-box {
-    background: rgba(232, 76, 69, 0.07);
-    border: 1px solid rgba(232, 76, 69, 0.22);
-    border-left: 3px solid rgba(232, 76, 69, 0.55);
+    background: rgba(248,81,73,0.06);
+    border: 1px solid rgba(248,81,73,0.2);
+    border-left: 3px solid var(--red);
 }
 .sol-box {
-    background: rgba(109, 217, 122, 0.05);
-    border: 1px solid rgba(109, 217, 122, 0.18);
-    border-left: 3px solid rgba(109, 217, 122, 0.45);
+    background: rgba(86,211,100,0.05);
+    border: 1px solid rgba(86,211,100,0.18);
+    border-left: 3px solid var(--green);
 }
 .box-lbl {
-    font-size: 0.62rem;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.56rem;
     font-weight: 600;
-    letter-spacing: 0.15em;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
-    margin-bottom: 0.35rem;
+    margin-bottom: 0.3rem;
 }
 .box-lbl.d { color: var(--red);   }
 .box-lbl.s { color: var(--green); }
 .box-txt {
-    font-size: 0.875rem;
-    color: var(--muted);
-    line-height: 1.65;
-}
-.box-txt code {
     font-family: 'Fira Code', monospace;
-    font-size: 0.82rem;
-    color: var(--text);
+    font-size: 0.78rem;
+    color: var(--muted);
+    line-height: 1.7;
 }
+.box-txt code { font-family: 'Fira Code', monospace; font-size: 0.75rem; color: var(--text); }
 
-/* ── 9. Feature List ── */
-.flist {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
+/* ── Lista de features ── */
+.flist { list-style: none; display: flex; flex-direction: column; gap: 0.45rem; }
 .flist li {
     display: flex;
     align-items: flex-start;
-    gap: 0.7rem;
-    font-size: 0.875rem;
+    gap: 0.6rem;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.78rem;
     color: var(--muted);
-    line-height: 1.55;
+    line-height: 1.65;
 }
 .flist li::before {
     content: '▸';
     color: var(--gold);
     flex-shrink: 0;
     margin-top: 1px;
+    text-shadow: 0 0 5px var(--gold-glow);
 }
-.flist li code {
-    font-family: 'Fira Code', monospace;
-    font-size: 0.8rem;
-}
+.flist li code { font-family: 'Fira Code', monospace; font-size: 0.73rem; color: var(--text); }
 
-/* ── 10. Code Block & Syntax Highlighting ── */
+/* ── Bloco de código ── */
 .code-block {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 3px;
     height: 100%;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), 0 4px 24px rgba(0,0,0,0.3);
+    position: relative;
+    box-shadow: inset 0 0 28px rgba(0,0,0,0.22), 0 0 0 1px rgba(200,160,48,0.04);
+}
+.code-block::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 10px; height: 10px;
+    border-top: 1px solid rgba(200,160,48,0.28);
+    border-right: 1px solid rgba(200,160,48,0.28);
+    border-radius: 0 3px 0 0;
+    pointer-events: none;
+    z-index: 1;
 }
 .code-title {
     font-family: 'Fira Code', monospace;
-    font-size: 0.65rem;
+    font-size: 0.57rem;
     color: var(--muted);
-    padding: 0.7rem 1.4rem;
+    padding: 0.48rem 1rem;
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
     letter-spacing: 0.04em;
-    background: linear-gradient(90deg, var(--surface2) 0%, transparent 60%);
-    border-radius: 10px 10px 0 0;
+    background: linear-gradient(90deg, var(--surface2), transparent 70%);
 }
 pre {
     font-family: 'Fira Code', monospace;
-    font-size: 0.78rem;
-    line-height: 1.75;
+    font-size: 0.7rem;
+    line-height: 1.85;
     flex: 1;
     overflow: hidden;
-    padding: 1.1rem 1.4rem;
+    padding: 0.85rem 1rem;
 }
 
-/* Syntax token colours */
-.kw  { color: var(--teal);   }
+/* Tokens de sintaxe */
+.kw  { color: var(--teal);   text-shadow: 0 0 5px rgba(88,196,220,0.22);  }
 .tp  { color: var(--blue);   }
 .fn  { color: var(--purple); }
 .str { color: var(--orange); }
 .cmt { color: var(--dim);    font-style: italic; }
 .num { color: var(--green);  }
-.cls { color: var(--orange); }
+.cls { color: var(--orange); text-shadow: 0 0 5px rgba(255,166,87,0.18);  }
 
-/* ── 11. Split Layout ── */
+/* ── Bloco de diagrama ── */
+.diagram-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 0 0 28px rgba(0,0,0,0.22), 0 0 0 1px rgba(200,160,48,0.04);
+}
+.diagram-block::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 10px; height: 10px;
+    border-top: 1px solid rgba(200,160,48,0.28);
+    border-right: 1px solid rgba(200,160,48,0.28);
+    border-radius: 0 3px 0 0;
+    pointer-events: none;
+    z-index: 1;
+}
+.diagram-title {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.57rem;
+    color: var(--muted);
+    padding: 0.48rem 1rem;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    letter-spacing: 0.04em;
+    background: linear-gradient(90deg, var(--surface2), transparent 70%);
+}
+.diagram-block svg {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+}
+
+/* ── Layout split ── */
 .split {
     display: grid;
     grid-template-columns: 1fr 1.15fr;
-    gap: 2rem;
+    gap: 1.6rem;
     flex: 1;
     min-height: 0;
 }
@@ -380,80 +378,87 @@ pre {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 0;
 }
 
-/* ── 12. Title Slide (#s1) ── */
+/* ── Slide de título ── */
 #s1 {
     justify-content: center;
     align-items: center;
     text-align: center;
-    gap: 0;
     padding: 0;
 }
 
-@keyframes titleShimmer {
-    0%   { background-position: 200% center; }
-    100% { background-position: -200% center; }
+@keyframes shimmer {
+    from { background-position: 200% center; }
+    to   { background-position: -200% center; }
+}
+@keyframes cursorBlink {
+    0%, 49%   { opacity: 1; }
+    50%, 100% { opacity: 0; }
+}
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0);   }
+}
+@keyframes titleGlow {
+    0%, 100% { filter: drop-shadow(0 0 20px rgba(200,160,48,0.2)); }
+    50%      { filter: drop-shadow(0 0 42px rgba(200,160,48,0.42)); }
 }
 
-@keyframes subtitleFade {
-    from { opacity: 0; letter-spacing: 0.4em; }
-    to   { opacity: 1; letter-spacing: 0.25em; }
-}
-
-@keyframes tagsFade {
-    from { opacity: 0; transform: translateY(10px); }
-    to   { opacity: 1; transform: translateY(0); }
+.title-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .game-title {
     font-family: 'Cinzel', serif;
-    font-size: 6.5rem;
+    font-size: clamp(4rem, 7.5vw, 6.5rem);
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
     line-height: 1;
     background: linear-gradient(
-            90deg,
-            var(--gold)       0%,
-            #e8b830          20%,
-            #fff5c0          42%,
-            #f5d060          50%,
-            #fff5c0          58%,
-            #e8b830          80%,
-            var(--gold)      100%
+        90deg,
+        var(--gold) 0%, var(--gold-lt) 28%,
+        #fff8d0 50%, var(--gold-lt) 72%, var(--gold) 100%
     );
     background-size: 200% auto;
     -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
     background-clip: text;
-    animation: titleShimmer 4.5s linear infinite;
-    filter: drop-shadow(0 0 30px rgba(200,151,15,0.3));
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 5s linear infinite, titleGlow 3s ease-in-out infinite;
 }
 
-.game-sub {
-    font-size: 1rem;
-    color: var(--muted);
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-    font-weight: 300;
-    margin-top: 1.2rem;
-    animation: subtitleFade 1.2s ease 0.3s both;
+.title-cursor {
+    display: inline-block;
+    width: 3px;
+    height: 0.75em;
+    background: var(--gold);
+    vertical-align: middle;
+    margin-left: 0.15em;
+    animation: cursorBlink 1s step-end infinite;
+    box-shadow: 0 0 8px var(--gold-glow);
 }
 
-/* Thin gold rule flanking subtitle */
 .game-sub-wrap {
     display: flex;
     align-items: center;
-    gap: 1.2rem;
-    margin-top: 1.2rem;
-    animation: subtitleFade 1.2s ease 0.3s both;
+    gap: 1.1rem;
+    margin-top: 1.1rem;
+    animation: fadeUp 0.8s ease 0.4s both;
 }
 .game-sub-wrap .rule {
     flex: 1;
-    max-width: 80px;
+    max-width: 60px;
     height: 1px;
     background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.game-sub {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.78rem;
+    color: var(--muted);
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
 }
 
 .tag-row {
@@ -461,113 +466,141 @@ pre {
     gap: 0.7rem;
     justify-content: center;
     flex-wrap: wrap;
-    margin-top: 2rem;
-    animation: tagsFade 0.8s ease 0.7s both;
+    margin-top: 1.8rem;
+    animation: fadeUp 0.8s ease 0.7s both;
 }
 .hint {
     font-family: 'Fira Code', monospace;
-    font-size: 0.72rem;
+    font-size: 0.62rem;
     color: var(--dim);
-    margin-top: 3rem;
-    letter-spacing: 0.05em;
-    animation: tagsFade 0.8s ease 1s both;
+    margin-top: 2.2rem;
+    letter-spacing: 0.06em;
+    animation: fadeUp 0.8s ease 1.0s both;
 }
 
-/* ── 13. Overview Slide (#s2) ── */
+/* ── Cards de visão geral ── */
 .pat-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0.85rem;
+    gap: 0.7rem;
 }
 .pat-card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 9px;
-    padding: 1rem 1.1rem;
+    border-radius: 3px;
+    padding: 0.8rem 0.95rem;
     transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
     cursor: default;
+    position: relative;
+}
+.pat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 8px; height: 8px;
+    border-top: 1px solid var(--card-accent, var(--dim));
+    border-right: 1px solid var(--card-accent, var(--dim));
+    border-radius: 0 3px 0 0;
+    opacity: 0.4;
+    transition: opacity 0.2s;
 }
 .pat-card:hover {
     transform: translateY(-2px);
     border-color: var(--card-accent, var(--gold));
-    box-shadow: 0 4px 20px color-mix(in srgb, var(--card-accent, var(--gold)) 20%, transparent);
+    box-shadow: 0 4px 18px rgba(0,0,0,0.3);
 }
+.pat-card:hover::before { opacity: 1; }
 .pat-card-top {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    margin-bottom: 0.5rem;
+    gap: 0.55rem;
+    margin-bottom: 0.4rem;
 }
 .pat-card-name {
     font-family: 'Cinzel', serif;
-    font-size: 0.95rem;
+    font-size: 0.88rem;
     font-weight: 600;
 }
 .pat-card-desc {
-    font-size: 0.82rem;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.74rem;
     color: var(--muted);
-    line-height: 1.55;
+    line-height: 1.65;
 }
 
-/* ── 14. Architecture Slide (#s11) ── */
+/* ── Arquitetura ── */
 .arch-box {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 1.5rem 2rem;
+    border-radius: 3px;
+    padding: 1.2rem 1.6rem;
     font-family: 'Fira Code', monospace;
-    font-size: 0.8rem;
-    line-height: 1.9;
+    font-size: 0.71rem;
+    line-height: 1.92;
     white-space: pre;
     color: var(--muted);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+    width: 100%;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.2), 0 0 0 1px rgba(200,160,48,0.04);
+    position: relative;
+}
+.arch-box::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 10px; height: 10px;
+    border-top: 1px solid rgba(200,160,48,0.28);
+    border-right: 1px solid rgba(200,160,48,0.28);
+    border-radius: 0 3px 0 0;
 }
 
-/* ── 15. Demo Slide (#s12) ── */
+/* ── Demo ── */
 .demo-cmd {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-left: 3px solid rgba(109,217,122,0.45);
-    border-radius: 7px;
-    padding: 0.65rem 1.2rem;
+    border-left: 2px solid rgba(86,211,100,0.5);
+    border-radius: 3px;
+    padding: 0.55rem 1.1rem;
     font-family: 'Fira Code', monospace;
-    font-size: 0.88rem;
+    font-size: 0.78rem;
     color: var(--green);
+    text-shadow: 0 0 8px rgba(86,211,100,0.28);
     width: 100%;
-    max-width: 560px;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    max-width: 540px;
+    transition: box-shadow 0.2s, border-left-color 0.2s;
 }
 .demo-cmd:hover {
     border-left-color: var(--green);
-    box-shadow: 0 0 12px rgba(109,217,122,0.12);
+    box-shadow: 0 0 10px rgba(86,211,100,0.1);
 }
 .demo-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 0.85rem;
-    margin-top: 1.75rem;
-    max-width: 860px;
+    gap: 0.7rem;
+    margin-top: 1.4rem;
+    max-width: 840px;
     width: 100%;
 }
 .demo-card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 0.9rem 1rem;
+    border-radius: 3px;
+    padding: 0.8rem 0.85rem;
     text-align: center;
-    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+    transition: border-color 0.2s, transform 0.2s;
 }
 .demo-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    border-color: var(--card-accent, var(--dim));
 }
 .demo-card-lbl {
     font-family: 'Fira Code', monospace;
-    font-size: 0.68rem;
-    margin-bottom: 0.45rem;
+    font-size: 0.62rem;
+    margin-bottom: 0.38rem;
+    letter-spacing: 0.05em;
 }
 .demo-card-txt {
-    font-size: 0.78rem;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.7rem;
     color: var(--muted);
-    line-height: 1.55;
+    line-height: 1.65;
 }
