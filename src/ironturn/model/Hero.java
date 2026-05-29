@@ -26,12 +26,6 @@ public class Hero extends Character{
     public boolean hasFlameCloakPending()       { return flameCloakPending; }
     public void setFlameCloakPending(boolean v) { flameCloakPending = v; }
 
-    // Variáveis para Fúria no modo inimigo
-    private boolean hasRaged = false;
-    public boolean hasRaged()   { return hasRaged; }
-    public void triggerRage()   { hasRaged = true; }
-    public void resetRage()     { hasRaged = false; }
-
     public Hero(String name, int hp, int hpMax, int atk, int def, AttackStrategy strategy, HeroClass heroClass) {
         super(name, hp, hpMax, atk, def);
         this.strategy = strategy;

@@ -42,6 +42,8 @@ public class BattleEngine {
     private HeroSnapshot heroBossSnapshot = null;
     private HeroSnapshot heroSnapshot = null;
 
+    private boolean playerHasRaged = false;
+
     // Construtor do modo Herói
     public BattleEngine(Scanner scanner) {
         this.history = new CommandHistory();
@@ -330,9 +332,9 @@ public class BattleEngine {
 
     private void playerTurn() {
 
-        if (playAsEnemy && !hero.hasRaged()
+        if (playAsEnemy && !playerHasRaged
                 && (double) hero.getHp() / hero.getMaxHp() <= 0.30) {
-            hero.triggerRage();
+            playerHasRaged = true;   // era: hero.triggerRage()
             UI.frameOpen(UI.RED, ">> FÚRIA — " + hero.getName());
             System.out.println("\n  ⚠  Você entra em fúria!");
             UI.pause(1500);
@@ -377,11 +379,8 @@ public class BattleEngine {
 
                 MenuEntry entry = menu.get(choice);
                 entry.action().run();
+                if (entry.takesTurn()) { actionTaken = true; applyBurn(); }
                 UI.frameClose(UI.BLUE);
-                if (entry.takesTurn()) {
-                    actionTaken = true;
-                    applyBurn();
-                }
 
             } catch (NumberFormatException e) {
                 System.out.println("  Digite um número válido.");
@@ -529,6 +528,7 @@ public class BattleEngine {
                     currentEnemy = enemies.get(0);
                     heroHpSnapshot = hero.getHp();
                     enemyHasAttacked = false;
+                    playerHasRaged = false;
                     activeGuard = null;
                     hero.resetContra();
                     UI.separator();
@@ -553,12 +553,20 @@ public class BattleEngine {
     private boolean ending() {
         UI.blank();
         if (hero.isAlive()) {
-            UI.section("  ═══  VITÓRIA  ═══");
-            UI.blank();
-            System.out.println("  O Rei Demônio de desfaz em pó.");
-            System.out.println("  A escuridão se dissipa — por ora.");
-            UI.blank();
-            System.out.printf("  %s, seu nome será lembrado.%n", hero.getName());
+            if (playAsEnemy) {
+                UI.sectionEnemy("  ═══  VITÓRIA  ═══");
+                UI.blank();
+                System.out.println("  As sombras retornam... por ora.");
+                UI.blank();
+                System.out.printf("  %s dominou o campo de batalha.%n", hero.getName());
+            } else {
+                UI.section("  ═══  VITÓRIA  ═══");
+                UI.blank();
+                System.out.println("  O Rei Demônio se desfaz em pó.");
+                System.out.println("  A escuridão se dissipa — por ora.");
+                UI.blank();
+                System.out.printf("  %s, seu nome será lembrado.%n", hero.getName());
+            }
         } else {
             UI.sectionEnemy("  ═══  FIM DE JOGO  ═══");
             UI.blank();

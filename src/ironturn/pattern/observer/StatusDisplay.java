@@ -8,6 +8,9 @@ public class StatusDisplay implements BattleObserver {
 
     @Override
     public void onEvent(BattleEvent event) {
+
+        if (event.getType() == BattleEvent.Type.BURN_DAMAGE) return;
+
         Character hero  = event.getAttacker() instanceof Hero ? event.getAttacker() : event.getTarget();
         Character enemy = event.getAttacker() instanceof Hero ? event.getTarget()   : event.getAttacker();
 
