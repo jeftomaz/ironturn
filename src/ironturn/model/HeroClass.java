@@ -1,7 +1,8 @@
 package ironturn.model;
 
 public enum HeroClass {
+    WARRIOR(30), MAGE(35);
 
-    WARRIOR, MAGE
-
+    public final int equippedAtk;
+    HeroClass(int equippedAtk) { this.equippedAtk = equippedAtk; }
 }

@@ -2,6 +2,7 @@ package ironturn;
 
 import ironturn.battle.BattleEngine;
 import ironturn.battle.UI;
+import ironturn.model.HeroClass;
 
 import java.util.Scanner;
 
@@ -49,11 +50,13 @@ public class GameMenu {
     }
 
     private void playAsEnemy() {
-        // TODO — Fase seguinte: EnemyHero + BattleEngine com flag playAsEnemy
+        HeroClass[] classes = HeroClass.values();
+        HeroClass chosen = classes[new java.util.Random().nextInt(classes.length)];
+        BattleEngine engine = new BattleEngine(scanner, progress.getSnapshot(chosen));
+        engine.start();
+
         System.out.println();
-        System.out.println("  [Modo Inimigo — em desenvolvimento]");
-        System.out.println();
-        System.out.println(UI.DIM + "  Pressione Enter para voltar..." + UI.RESET);
+        System.out.println(UI.DIM + "  Pressione Enter para voltar ao menu..." + UI.RESET);
         scanner.nextLine();
     }
 

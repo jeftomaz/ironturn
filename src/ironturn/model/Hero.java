@@ -12,13 +12,25 @@ public class Hero extends Character{
     private int undosRemaining;
     private int scrollCount = 0;
     private final List<Item> inventory = new ArrayList<>();
+
+    // Variáveis para o Chifre da Irmandade
     private int guardianDropCount = 0;
     private boolean guardianArmed = false;
+    public boolean hasGuardianDrop() { return guardianDropCount > 0; }
+    public boolean isGuardianArmed() { return guardianArmed; }
+    public void addGuardianDrop() { guardianDropCount++; }
+    public void disarmGuardian() { guardianArmed = false; }
 
-    public boolean hasGuardianDrop()    { return guardianDropCount > 0; }
-    public boolean isGuardianArmed()    { return guardianArmed; }
-    public void addGuardianDrop()       { guardianDropCount++; }
-    public void disarmGuardian()        { guardianArmed = false; }
+    // Variáveis para o Manto de Chamas
+    private boolean flameCloakPending = false;
+    public boolean hasFlameCloakPending()       { return flameCloakPending; }
+    public void setFlameCloakPending(boolean v) { flameCloakPending = v; }
+
+    // Variáveis para Fúria no modo inimigo
+    private boolean hasRaged = false;
+    public boolean hasRaged()   { return hasRaged; }
+    public void triggerRage()   { hasRaged = true; }
+    public void resetRage()     { hasRaged = false; }
 
     public Hero(String name, int hp, int hpMax, int atk, int def, AttackStrategy strategy, HeroClass heroClass) {
         super(name, hp, hpMax, atk, def);
@@ -33,9 +45,9 @@ public class Hero extends Character{
     public void useContra() { if (undosRemaining > 0) undosRemaining-- ;}
     public void resetContra() { undosRemaining = 1; }
 
-    public boolean hasScroll()   { return scrollCount > 0; }
-    public int getScrollCount()  { return scrollCount; }
-    public void addScroll()      { scrollCount++; }
+    public boolean hasScroll() { return scrollCount > 0; }
+    public int getScrollCount() { return scrollCount; }
+    public void addScroll() { scrollCount++; }
 
     @Override
     public int attack(Character target) {
@@ -58,5 +70,5 @@ public class Hero extends Character{
     }
 
     public void addToInventory(Item item) { inventory.add(item); }
-    public List<Item> getInventory()      { return inventory; }
+    public List<Item> getInventory() { return inventory; }
 }

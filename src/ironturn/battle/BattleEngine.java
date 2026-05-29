@@ -7,10 +7,8 @@ import ironturn.model.item.Item;
 import ironturn.pattern.command.AttackCommand;
 import ironturn.pattern.command.CommandHistory;
 import ironturn.pattern.command.GuardCommand;
-import ironturn.pattern.decorator.AmuletDecorator;
-import ironturn.pattern.decorator.CharacterDecorator;
-import ironturn.pattern.decorator.ShieldDecorator;
-import ironturn.pattern.decorator.SwordDecorator;
+import ironturn.pattern.decorator.*;
+import ironturn.pattern.observer.BattleEvent;
 import ironturn.pattern.observer.BattleLogger;
 import ironturn.pattern.observer.BattleObserver;
 import ironturn.pattern.observer.StatusDisplay;
@@ -39,6 +37,7 @@ public class BattleEngine {
     private int heroHpSnapshot;
     private boolean enemyHasAttacked;
     private GuardCommand activeGuard;
+
     private boolean playAsEnemy = false;
     private HeroSnapshot heroBossSnapshot = null;
     private HeroSnapshot heroSnapshot = null;
@@ -204,9 +203,11 @@ public class BattleEngine {
         System.out.println("  Equipamentos:");
         Character c = equipped;
         while (c instanceof CharacterDecorator dec) {
-            if      (c instanceof SwordDecorator)  System.out.println("    • Espada     +10 ATK");
+            if (c instanceof SwordDecorator)  System.out.println("    • Espada     +10 ATK");
             else if (c instanceof ShieldDecorator) System.out.println("    • Escudo      +8 DEF");
             else if (c instanceof AmuletDecorator) System.out.println("    • Amuleto     +15 ATK  +30 HP máx");
+            else if (c instanceof FlameCloakDecorator)
+                System.out.println("    • Manto de Chamas  +5 burn/ação");
             c = dec.getWrapped();
         }
     }
@@ -224,6 +225,9 @@ public class BattleEngine {
             System.out.println("  ✦ Feitiços de reversão: " + hero.getContraAvailable());
         if (hero.getHeroClass() == HeroClass.WARRIOR && hero.hasScroll())
             System.out.println("  ✦ Pergaminhos: " + hero.getScrollCount());
+        if (hero.getHeroClass() == HeroClass.MAGE && hero.hasGuardianDrop())
+            System.out.println("  ✦ Chifre da Irmandade: "
+                    + (hero.isGuardianArmed() ? "ARMADO" : "disponível"));
 
         if (!hero.getInventory().isEmpty()) {
             System.out.println("  Itens coletados:");
@@ -284,6 +288,15 @@ public class BattleEngine {
             }, false));
         }
 
+        if (hero.getHeroClass() == HeroClass.MAGE
+                && hero.hasGuardianDrop()
+                && !hero.isGuardianArmed()) {
+            menu.add(new MenuEntry("Preparar Proteção do Guerreiro", () -> {
+                hero.activateGuardian();
+                System.out.println("\n  ✦ O Guerreiro aguarda o seu chamado.");
+            }, true));
+        }
+
         menu.add(new MenuEntry("Ver Status (não gasta turno)", this::showStatus, false));
 
         return menu;
@@ -291,7 +304,45 @@ public class BattleEngine {
 
     // Turn logic
 
+    private void triggerGuardianStrike() {
+        int combinedDmg = HeroClass.WARRIOR.equippedAtk + equipped.getAtk();
+        System.out.println("\n  ✦ O Chifre da Irmandade ressoa pelas sombras...");
+        UI.pause(2000);
+        System.out.println("  Uma figura surge — o Guerreiro, com sua espada erguida.");
+        UI.pause(2000);
+        System.out.printf("  Juntos, desferem um golpe combinado! (%d de dano)%n", combinedDmg);
+        UI.pause(1500);
+        currentEnemy.takeDamage(combinedDmg);
+        BattleEvent evt = new BattleEvent(equipped, currentEnemy, combinedDmg);
+        observers.forEach(o -> o.onEvent(evt));
+        if (!currentEnemy.isAlive()) {
+            int criticalHp = (int)(equipped.getMaxHp() * 0.30);
+            int healed = criticalHp - hero.getHp();
+            if (healed > 0) {
+                hero.setHp(criticalHp);
+                System.out.printf("  ✦ Uma energia te restaura. (+%d HP)%n", healed);
+            }
+        } else {
+            hero.setHp(1);
+            System.out.println("  O inimigo resistiu. Você sobreviveu por um fio.");
+        }
+    }
+
     private void playerTurn() {
+
+        if (playAsEnemy && !hero.hasRaged()
+                && (double) hero.getHp() / hero.getMaxHp() <= 0.30) {
+            hero.triggerRage();
+            UI.frameOpen(UI.RED, ">> FÚRIA — " + hero.getName());
+            System.out.println("\n  ⚠  Você entra em fúria!");
+            UI.pause(1500);
+            int threshold = (int)(currentEnemy.getMaxHp() * 0.30);
+            if (currentEnemy.getHp() > threshold) currentEnemy.setHp(threshold);
+            System.out.println("  Um golpe devastador abala o inimigo.");
+            UI.frameClose(UI.RED);
+            return; // consome o turno
+        }
+
         boolean actionTaken = false;
 
         System.out.println();
@@ -325,9 +376,12 @@ public class BattleEngine {
                 }
 
                 MenuEntry entry = menu.get(choice);
-                entry.action().run();      // resultado do ataque sai enquadrado automaticamente
+                entry.action().run();
                 UI.frameClose(UI.BLUE);
-                if (entry.takesTurn()) actionTaken = true;
+                if (entry.takesTurn()) {
+                    actionTaken = true;
+                    applyBurn();
+                }
 
             } catch (NumberFormatException e) {
                 System.out.println("  Digite um número válido.");
@@ -344,18 +398,39 @@ public class BattleEngine {
         if (currentEnemy.canUseSpecial()) {
             System.out.println("  ⚠  " + currentEnemy.getName() + " entra em fúria!");
             UI.pause(1500);
+            int hpBefore = hero.getHp();
             currentEnemy.triggerSpecial(equipped);
             System.out.println("  Um golpe devastador — você mal consegue se manter de pé.");
+            if (!hero.isAlive() && hero.isGuardianArmed()) {
+                hero.setHp(hpBefore);
+                hero.disarmGuardian();
+                triggerGuardianStrike();
+            }
         } else {
             System.out.println("…O inimigo está se preparando para atacar!");
             UI.pause(3000);
             AttackCommand cmd = new AttackCommand(currentEnemy, equipped, observers);
             cmd.execute();
-            history.push(cmd);
-            enemyHasAttacked = true;
+            if (!hero.isAlive() && hero.isGuardianArmed()) {
+                cmd.undo();
+                hero.disarmGuardian();
+                triggerGuardianStrike();
+            } else {
+                history.push(cmd);
+                enemyHasAttacked = true;
+            }
         }
 
+        applyBurn();
         UI.frameClose(UI.RED);
+    }
+
+    private void applyBurn() {
+        int burn = equipped.getBurnDamage();
+        if (burn <= 0 || !currentEnemy.isAlive()) return;
+        currentEnemy.takeDamage(burn);
+        BattleEvent evt = new BattleEvent(equipped, currentEnemy, burn, BattleEvent.Type.BURN_DAMAGE);
+        observers.forEach(o -> o.onEvent(evt));
     }
 
     // Game flow
@@ -399,18 +474,19 @@ public class BattleEngine {
     private Item showDropMenu(List<Item> drops) {
         UI.sectionDrop(">> SAQUE");
         System.out.println("O inimigo deixou cair alguns itens:\n");
-        System.out.println(" [1] " + drops.get(0).getName() + " -- " + drops.get(0).getDescription());
-        System.out.println(" [2] " + drops.get(1).getName() + " -- " + drops.get(1).getDescription());
+        for (int i = 0; i < drops.size(); i++)
+            System.out.printf(" [%d] %s -- %s%n", i + 1,
+                    drops.get(i).getName(), drops.get(i).getDescription());
         System.out.println();
         UI.separator();
 
         int choice = -1;
-        while (choice != 1 && choice != 2) {
+        while (choice < 1 || choice > drops.size()) {
             try {
                 System.out.print(" > ");
                 choice = Integer.parseInt(scanner.nextLine());
-                if (choice != 1 && choice != 2)
-                    System.out.println(" Escolha [1] ou [2].");
+                if (choice < 1 || choice > drops.size())
+                    System.out.println(" Escolha entre 1 à " + drops.size() + ".");
             } catch (NumberFormatException e) {
                 System.out.println(" Digite um número válido");
             }
@@ -436,7 +512,17 @@ public class BattleEngine {
                         List<Item> drops = DropTable.roll(hero.getHeroClass());
                         Item chosen = showDropMenu(drops);
                         chosen.apply(hero);
+                        if (hero.hasFlameCloakPending()) {
+                            equipped = new FlameCloakDecorator(equipped);
+                            hero.setFlameCloakPending(false);
+                        }
                         if (!(chosen instanceof HopeScroll)) hero.addToInventory(chosen);
+                        System.out.println(UI.GREEN + " Você obteve: " + chosen.getName() + "!" + UI.RESET);
+                        UI.separator();
+                    } else if (enemies.size() == 1) {
+                        List<Item> drops = DropTable.rollBase(3);
+                        Item chosen = showDropMenu(drops);
+                        chosen.apply(hero);
                         System.out.println(UI.GREEN + " Você obteve: " + chosen.getName() + "!" + UI.RESET);
                         UI.separator();
                     }
@@ -477,7 +563,7 @@ public class BattleEngine {
             UI.sectionEnemy("  ═══  FIM DE JOGO  ═══");
             UI.blank();
             System.out.println("  A escuridão não foi contida.");
-            System.out.printf("  %s tombou, mas a luta não termina aqui.%n", hero.getName());
+            System.out.printf("  %s caiu, mas a luta não termina aqui.%n", hero.getName());
         }
         UI.blank();
         return hero.isAlive();
