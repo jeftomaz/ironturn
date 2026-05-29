@@ -20,7 +20,11 @@
     ═══════════════════════════════════ -->
     <div class="slide active" id="s1">
         <h1 class="game-title">IronTurn</h1>
-        <p class="game-sub">RPG por Turnos em Java Puro</p>
+        <div class="game-sub-wrap">
+            <span class="rule"></span>
+            <p class="game-sub" style="margin-top:0">RPG por Turnos em Java Puro</p>
+            <span class="rule"></span>
+        </div>
         <div class="tag-row">
             <span class="ptag pt-s">Strategy</span>
             <span class="ptag pt-d">Decorator</span>
@@ -53,28 +57,28 @@
                 </ul>
             </div>
             <div class="pat-grid" style="align-content:center">
-                <div class="pat-card">
+                <div class="pat-card" style="--card-accent:var(--teal)">
                     <div class="pat-card-top">
                         <span style="font-size:1.1rem">⚔</span>
                         <span class="pat-card-name" style="color:var(--teal)">Strategy</span>
                     </div>
                     <p class="pat-card-desc">Comportamento de ataque por classe — injetado no herói na criação</p>
                 </div>
-                <div class="pat-card">
+                <div class="pat-card" style="--card-accent:var(--orange)">
                     <div class="pat-card-top">
                         <span style="font-size:1.1rem">🛡</span>
                         <span class="pat-card-name" style="color:var(--orange)">Decorator</span>
                     </div>
                     <p class="pat-card-desc">Equipamentos somam bônus por composição, sem herança</p>
                 </div>
-                <div class="pat-card">
+                <div class="pat-card" style="--card-accent:var(--blue)">
                     <div class="pat-card-top">
                         <span style="font-size:1.1rem">↩</span>
                         <span class="pat-card-name" style="color:var(--blue)">Command</span>
                     </div>
                     <p class="pat-card-desc">Ações do turno como objetos — com <code style="font-size:0.78rem">execute()</code> e <code style="font-size:0.78rem">undo()</code></p>
                 </div>
-                <div class="pat-card">
+                <div class="pat-card" style="--card-accent:var(--green)">
                     <div class="pat-card-top">
                         <span style="font-size:1.1rem">📡</span>
                         <span class="pat-card-name" style="color:var(--green)">Observer</span>
@@ -496,27 +500,27 @@ observers.<span class="fn">add</span>(<span class="kw">new</span> <span class="c
         </div>
         <div style="display:flex;justify-content:center;align-items:center;flex:1">
             <div class="arch-box"><span style="color:var(--gold)">BattleEngine.setup()</span>
-│
-├─ createHero()
-│    ├─ new Hero(..., <span style="color:var(--teal)">new WarriorAttack()</span>)              ◀ <span style="color:var(--teal)">Strategy</span> injetada
-│    └─ equipped = <span style="color:var(--orange)">ShieldDecorator(SwordDecorator(h))</span>  ◀ <span style="color:var(--orange)">Decorator</span> empilhado
-│
-└─ observers: [<span style="color:var(--green)">BattleLogger</span>, <span style="color:var(--green)">StatusDisplay</span>]            ◀ <span style="color:var(--green)">Observers</span> registrados
+                │
+                ├─ createHero()
+                │    ├─ new Hero(..., <span style="color:var(--teal)">new WarriorAttack()</span>)              ◀ <span style="color:var(--teal)">Strategy</span> injetada
+                │    └─ equipped = <span style="color:var(--orange)">ShieldDecorator(SwordDecorator(h))</span>  ◀ <span style="color:var(--orange)">Decorator</span> empilhado
+                │
+                └─ observers: [<span style="color:var(--green)">BattleLogger</span>, <span style="color:var(--green)">StatusDisplay</span>]            ◀ <span style="color:var(--green)">Observers</span> registrados
 
-<span style="color:var(--gold)">BattleEngine.loop()</span>  — a cada turno:
-│
-├─ buildMenu() → List&lt;MenuEntry&gt;   <span style="color:var(--dim)">(menu dinâmico — opções variam por classe)</span>
-│
-├─ new <span style="color:var(--blue)">AttackCommand</span>(equipped, enemy, observers)   ◀ <span style="color:var(--blue)">Command</span> (ataque)
-│    ├─ execute()
-│    │    ├─ attacker.attack()    → <span style="color:var(--teal)">Strategy.execute()</span> chamada aqui
-│    │    ├─ target.takeDamage()  → <span style="color:var(--orange)">Decorator</span> delega ao Hero
-│    │    └─ BattleEvent(ATTACK)  → <span style="color:var(--green)">Observers</span> notificados
-│    └─ undo() → target.heal(damageDealt)        <span style="color:var(--dim)">[Mago]</span>
-│
-└─ new <span style="color:var(--blue)">GuardCommand</span>(equipped, enemy, observers)   ◀ <span style="color:var(--blue)">Command</span> (guarda)
-     ├─ execute() → DEF ×2  +  BattleEvent(GUARD)  → <span style="color:var(--green)">Observers</span>
-     └─ revert()  → DEF restaurada                  <span style="color:var(--dim)">[Guerreiro, fim do turno]</span></div>
+                <span style="color:var(--gold)">BattleEngine.loop()</span>  — a cada turno:
+                │
+                ├─ buildMenu() → List&lt;MenuEntry&gt;   <span style="color:var(--dim)">(menu dinâmico — opções variam por classe)</span>
+                │
+                ├─ new <span style="color:var(--blue)">AttackCommand</span>(equipped, enemy, observers)   ◀ <span style="color:var(--blue)">Command</span> (ataque)
+                │    ├─ execute()
+                │    │    ├─ attacker.attack()    → <span style="color:var(--teal)">Strategy.execute()</span> chamada aqui
+                │    │    ├─ target.takeDamage()  → <span style="color:var(--orange)">Decorator</span> delega ao Hero
+                │    │    └─ BattleEvent(ATTACK)  → <span style="color:var(--green)">Observers</span> notificados
+                │    └─ undo() → target.heal(damageDealt)        <span style="color:var(--dim)">[Mago]</span>
+                │
+                └─ new <span style="color:var(--blue)">GuardCommand</span>(equipped, enemy, observers)   ◀ <span style="color:var(--blue)">Command</span> (guarda)
+                ├─ execute() → DEF ×2  +  BattleEvent(GUARD)  → <span style="color:var(--green)">Observers</span>
+                └─ revert()  → DEF restaurada                  <span style="color:var(--dim)">[Guerreiro, fim do turno]</span></div>
         </div>
     </div>
 
