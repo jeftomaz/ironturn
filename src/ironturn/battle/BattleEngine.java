@@ -306,6 +306,18 @@ public class BattleEngine {
 
     // Turn logic
 
+    private void applyBurn() {
+        int burn = equipped.getBurnDamage();
+        if (burn <= 0 || !currentEnemy.isAlive()) return;
+        currentEnemy.takeDamage(burn);
+        System.out.println();
+        System.out.println("    xXx Manto de Chamas queima " + currentEnemy.getName()
+                + " por " + burn + " de dano!");
+        System.out.println("    " + buildBar(currentEnemy));
+        BattleEvent evt = new BattleEvent(equipped, currentEnemy, burn, BattleEvent.Type.BURN_DAMAGE);
+        observers.forEach(o -> o.onEvent(evt));
+    }
+
     private void triggerGuardianStrike() {
         int combinedDmg = HeroClass.WARRIOR.equippedAtk + equipped.getAtk();
         System.out.println("\n  ✦ O Chifre da Irmandade ressoa pelas sombras...");
@@ -424,14 +436,6 @@ public class BattleEngine {
         UI.frameClose(UI.RED);
     }
 
-    private void applyBurn() {
-        int burn = equipped.getBurnDamage();
-        if (burn <= 0 || !currentEnemy.isAlive()) return;
-        currentEnemy.takeDamage(burn);
-        BattleEvent evt = new BattleEvent(equipped, currentEnemy, burn, BattleEvent.Type.BURN_DAMAGE);
-        observers.forEach(o -> o.onEvent(evt));
-    }
-
     // Game flow
 
     private void setup() {
@@ -493,59 +497,63 @@ public class BattleEngine {
         return drops.get(choice - 1);
     }
 
+    /** Trata morte do inimigo, drops e transição para o próximo. Retorna true se houve morte. */
+    private boolean handleEnemyDefeat() {
+        if (currentEnemy.isAlive()) return false;
+
+        UI.enemyDefeated(currentEnemy.getName());
+
+        if (activeGuard != null) {
+            activeGuard.revert();
+            activeGuard = null;
+        }
+
+        enemies.remove(currentEnemy);
+        if (!enemies.isEmpty()) {
+            if (!playAsEnemy) {
+                List<Item> drops = DropTable.roll(hero.getHeroClass());
+                Item chosen = showDropMenu(drops);
+                chosen.apply(hero);
+                if (hero.hasFlameCloakPending()) {
+                    equipped = new FlameCloakDecorator(equipped);
+                    hero.setFlameCloakPending(false);
+                }
+                if (!(chosen instanceof HopeScroll)) hero.addToInventory(chosen);
+                System.out.println(UI.GREEN + " Você obteve: " + chosen.getName() + "!" + UI.RESET);
+                UI.separator();
+            } else if (enemies.size() == 1) {
+                List<Item> drops = DropTable.rollBase(3);
+                Item chosen = showDropMenu(drops);
+                chosen.apply(hero);
+                System.out.println(UI.GREEN + " Você obteve: " + chosen.getName() + "!" + UI.RESET);
+                UI.separator();
+            }
+            currentEnemy = enemies.get(0);
+            heroHpSnapshot = hero.getHp();
+            enemyHasAttacked = false;
+            playerHasRaged = false;
+            activeGuard = null;
+            hero.resetContra();
+            UI.separator();
+            System.out.println("  [!] Um novo inimigo surge das sombras: " + currentEnemy.getName() + "!");
+            UI.pause(3000);
+            UI.separator();
+        }
+        return true;
+    }
+
     private void loop() {
         while (hero.isAlive() && !enemies.isEmpty()) {
             playerTurn();
-
-            if (!currentEnemy.isAlive()) {
-                UI.enemyDefeated(currentEnemy.getName());
-
-                if (activeGuard != null) {   // ← FIX: revert antes do continue
-                    activeGuard.revert();
-                    activeGuard = null;
-                }
-
-                enemies.remove(currentEnemy);
-                if (!enemies.isEmpty()) {
-                    if (!playAsEnemy) {
-                        List<Item> drops = DropTable.roll(hero.getHeroClass());
-                        Item chosen = showDropMenu(drops);
-                        chosen.apply(hero);
-                        if (hero.hasFlameCloakPending()) {
-                            equipped = new FlameCloakDecorator(equipped);
-                            hero.setFlameCloakPending(false);
-                        }
-                        if (!(chosen instanceof HopeScroll)) hero.addToInventory(chosen);
-                        System.out.println(UI.GREEN + " Você obteve: " + chosen.getName() + "!" + UI.RESET);
-                        UI.separator();
-                    } else if (enemies.size() == 1) {
-                        List<Item> drops = DropTable.rollBase(3);
-                        Item chosen = showDropMenu(drops);
-                        chosen.apply(hero);
-                        System.out.println(UI.GREEN + " Você obteve: " + chosen.getName() + "!" + UI.RESET);
-                        UI.separator();
-                    }
-                    currentEnemy = enemies.get(0);
-                    heroHpSnapshot = hero.getHp();
-                    enemyHasAttacked = false;
-                    playerHasRaged = false;
-                    activeGuard = null;
-                    hero.resetContra();
-                    UI.separator();
-                    System.out.println("  [!] Um novo inimigo surge das sombras: " + currentEnemy.getName() + "!");
-                    UI.pause(3000);
-                    UI.separator();
-                }
-                continue;
-            }
+            if (handleEnemyDefeat()) continue;
 
             enemyTurn();
+            if (handleEnemyDefeat()) continue;   // ← FIX Bug 1: detecta morte por guardian strike
 
             if (activeGuard != null) {
                 activeGuard.revert();
                 activeGuard = null;
             }
-
             UI.turnDivider();
         }
     }

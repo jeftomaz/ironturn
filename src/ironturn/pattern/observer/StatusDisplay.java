@@ -12,9 +12,9 @@ public class StatusDisplay implements BattleObserver {
         if (event.getType() == BattleEvent.Type.BURN_DAMAGE) return;
 
         Character hero  = event.getAttacker() instanceof Hero ? event.getAttacker() : event.getTarget();
-        Character enemy = event.getAttacker() instanceof Hero ? event.getTarget()   : event.getAttacker();
+        Character enemy = event.getAttacker() instanceof Hero ? event.getTarget() : event.getAttacker();
 
-        int heroDmg  = event.getTarget() == hero  ? event.getHitTaken() : 0;
+        int heroDmg  = event.getTarget() == hero ? event.getHitTaken() : 0;
         int enemyDmg = event.getTarget() == enemy ? event.getHitTaken() : 0;
 
         System.out.println();
