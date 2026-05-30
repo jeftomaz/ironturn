@@ -135,7 +135,7 @@ public class BattleEngine {
         };
 
         for (int i = 0; i < roster.length; i++)
-            System.out.printf("  [%d]  %-14s  HP: %s | ATK: %s | DEF: %s%n",
+            System.out.printf("  [%d]  %-14s  HP: %s  | ATK: %s | DEF: %s%n",
                     i + 1, roster[i][0], roster[i][1], roster[i][2], roster[i][3]);
 
         System.out.println();
